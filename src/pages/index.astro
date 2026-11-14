@@ -1,0 +1,39 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+import PostCard from "@components/PostCard.astro";
+import { getAllPosts, getPostsWithStats, sortPostsByDate } from "@utils/blogUtils";
+import { Icon } from "astro-icon/components";
+
+const posts = await getPostsWithStats(sortPostsByDate(await getAllPosts()).slice(0, 8));
+---
+
+<BaseLayout title="首页">
+  <section class="welcome card bg-base-100 shadow-lg p-8 sm:p-10">
+    <p class="text-sm font-semibold tracking-widest text-primary mb-3">XIAOZHANGUP / BLOG</p>
+    <h1 class="welcome-title font-bold tracking-tight mb-4">欢迎来到我的博客。</h1>
+    <p class="text-base-content/65 leading-relaxed">从这里开始，慢慢记录。</p>
+    <nav aria-label="浏览博客" class="flex flex-wrap gap-3 mt-7">
+      <a href="/blog" class="btn btn-primary"><Icon name="lucide:book-open" class="size-4" />所有文章</a>
+      <a href="/blog/categories" class="btn btn-ghost"><Icon name="lucide:folder" class="size-4" />分类</a>
+      <a href="/blog/tags" class="btn btn-ghost"><Icon name="lucide:tags" class="size-4" />标签</a>
+    </nav>
+  </section>
+  <div class="flex items-center justify-between px-2 mt-3">
+    <h2 class="font-bold text-lg">最新文章</h2>
+    <a href="/blog" class="text-sm text-primary underline underline-offset-4">查看全部</a>
+  </div>
+  {posts.map((post, index) => (
+    <PostCard
+      {...post.data}
+      url={`/blog/${post.id}`}
+      priority={index === 0}
+      word={post.remarkPluginFrontmatter.totalCharCount}
+      time={post.remarkPluginFrontmatter.readingTime}
+    />
+  ))}
+</BaseLayout>
+
+<style>
+  .welcome { background-image: radial-gradient(ellipse at top right, color-mix(in oklch, var(--color-primary) 13%, transparent), transparent 65%); }
+  .welcome-title { font-size: clamp(1.75rem, 1.2rem + 2vw, 2.75rem); line-height: 1.4; }
+</style>

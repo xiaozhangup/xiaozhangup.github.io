@@ -1,0 +1,12 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+import MainCard from "@components/MainCard.astro";
+---
+<BaseLayout title="关于">
+  <MainCard title="关于这个博客" description="xiaozhangup 的个人博客" textOverlay="ABOUT" infoIcon="lucide:user">
+    <div class="prose max-w-none">
+      <p>欢迎来到我的个人博客。</p>
+      <p>你可以通过<a href="https://github.com/xiaozhangup">GitHub</a>找到我，也可以通过<a href="/rss.xml">RSS</a>订阅更新。</p>
+    </div>
+  </MainCard>
+</BaseLayout>

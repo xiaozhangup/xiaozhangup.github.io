@@ -1,0 +1,11 @@
+---
+import slugify from "slugify";
+
+const { url, title } = Astro.props;
+
+const headingId = slugify(title, { lower: true, strict: true });
+---
+
+<h2 id={headingId} class="frosti-heading">
+  <a href={url} target="_self" class="block hover:-translate-y-0.5 transition-transform duration-300">{title}</a>
+</h2>

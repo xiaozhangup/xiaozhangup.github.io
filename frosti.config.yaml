@@ -1,0 +1,58 @@
+site:
+  tab: xiaozhangup 的博客
+  title: xiaozhangup
+  description: 欢迎来到 xiaozhangup 的个人博客。
+  language: zh
+  favicon: /profile.png
+  theme:
+    light: winter
+    dark: dim
+    code: github-dark
+  date_format: YYYY年MM月DD日
+  blog:
+    pageSize: 8
+  menu:
+    - id: home
+      text: 首页
+      href: /
+      svg: lucide:house
+    - id: blog
+      text: 文章
+      href: /blog
+      svg: lucide:book-open
+    - id: categories
+      text: 分类
+      href: /blog/categories
+      svg: lucide:folder
+    - id: tags
+      text: 标签
+      href: /blog/tags
+      svg: lucide:tags
+    - id: archives
+      text: 归档
+      href: /blog/archives
+      svg: lucide:archive
+    - id: about
+      text: 关于
+      href: /about
+      svg: lucide:user
+user:
+  name: xiaozhangup
+  site: https://blog.xiaozhangup.me
+  avatar: /profile.png
+  sidebar:
+    social:
+      - href: https://github.com/xiaozhangup
+        ariaLabel: GitHub
+        title: GitHub
+        svg: ri:github-line
+      - href: /rss.xml
+        ariaLabel: RSS 订阅
+        title: RSS 订阅
+        svg: lucide:rss
+  footer:
+    social:
+      - href: https://github.com/xiaozhangup
+        ariaLabel: GitHub
+        title: GitHub
+        svg: ri:github-line
