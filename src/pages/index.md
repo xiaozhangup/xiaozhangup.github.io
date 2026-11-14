@@ -1,5 +1,5 @@
 ---
-layout: home
+layout: ../layouts/Page.astro
 title: 首页
 ---
 
