@@ -115,6 +115,7 @@ const email = 'xiaozhangshiw@163.com';
         <AdwIcon name="weather-clear-night" class="status-dark" />
         <AdwIcon name="weather-clear" class="status-light" />
         <AdwIcon name="avatar-default" class="status-profile" />
+        <AdwIcon name="open-menu" class="mobile-only app-menu-icon" />
       </button>
       <div class="disclosure-panel shell-popover quick-popover" id="quick-settings" inert>
         <div class="quick-grid">
@@ -123,6 +124,10 @@ const email = 'xiaozhangshiw@163.com';
           <button type="button" class="quick-action" data-quick-action="library"><AdwIcon name="text-x-generic" /><span data-i18n="allPosts">全部文章</span></button>
           <button type="button" class="quick-action" data-quick-action="desktop"><AdwIcon name="user-desktop" /><span data-i18n="showDesktop">显示桌面</span></button>
           <button type="button" class="quick-action quick-action--wide" data-quick-action="about"><AdwIcon name="help-about" /><span data-i18n="about">关于博客</span><AdwIcon name="go-next" /></button>
+          <a class="quick-action quick-action--wide mobile-only" href="https://github.com/xiaozhangup" target="_blank" rel="noopener noreferrer"><Icon name="simple-icons:github" aria-hidden="true" /><span data-i18n="githubProfile">GitHub 主页</span></a>
+          <a class="quick-action quick-action--wide mobile-only" href="https://github.com/xiaozhangup/xiaozhangup.github.io" target="_blank" rel="noopener noreferrer"><AdwIcon name="text-x-generic" /><span data-i18n="blogSource">博客源码</span></a>
+          <a class="quick-action quick-action--wide mobile-only" href={`mailto:${email}`}><AdwIcon name="mail-message-new" /><span>{email}</span></a>
+          <button type="button" class="quick-action quick-action--wide mobile-only" data-copy-email={email}><AdwIcon name="edit-copy" /><span data-i18n="copyEmail">复制邮箱</span></button>
           <a class="quick-action quick-action--wide" href="/rss.xml"><AdwIcon name="application-rss+xml" /><span data-i18n="rss">RSS 订阅</span><AdwIcon name="go-next" /></a>
         </div>
       </div>

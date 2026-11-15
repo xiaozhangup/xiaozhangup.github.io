@@ -37,7 +37,7 @@ const sidebar = document.querySelector<HTMLElement>('.library-sidebar')!;
 const dock = document.querySelector<HTMLElement>('.dock')!;
 const dockAnchor = document.querySelector<HTMLElement>('[data-dock-anchor]')!;
 const dockEdge = document.querySelector<HTMLButtonElement>('[data-dock-edge]')!;
-const mobileLayout = window.matchMedia('(max-width: 760px)');
+const mobileLayout = window.matchMedia('(max-width: 760px), (max-height: 480px) and (pointer: coarse)');
 let searchVersion = 0;
 let searchTimer: ReturnType<typeof setTimeout> | undefined;
 let pagefind: Promise<any> | undefined;
@@ -131,7 +131,7 @@ function hideWindow(win: HTMLElement) {
 }
 function focusWindow(win: HTMLElement, fly = false) {
   const item = dockItemFor(win);
-  if (fly && !isVisible(win)) {
+  if (fly && !mobileLayout.matches && !isVisible(win)) {
     flyToWindow(win, item, true, () => focusWindow(win));
     return;
   }
@@ -234,7 +234,7 @@ function filterPosts() {
 }
 function syncReaderTitle(reader: HTMLElement) {
   const name = windowTitle(reader);
-  reader.querySelector<HTMLElement>('[data-reader-title]')!.textContent = name;
+  reader.querySelectorAll<HTMLElement>('[data-reader-title]').forEach((title) => { title.textContent = name; });
   reader.setAttribute('aria-label', name);
 }
 const articlePath = (path: string) => path.replace(/\/+$/, '') + '/';
@@ -481,7 +481,12 @@ root.addEventListener('click', (event) => {
     return;
   }
   if (anchor.hasAttribute('data-open-about')) { event.preventDefault(); activateWindow(about); return; }
-  if (anchor.hasAttribute('data-open-library')) { event.preventDefault(); setFilter('all', '', true, '/blog/'); return; }
+  if (anchor.hasAttribute('data-open-library')) {
+    event.preventDefault();
+    if (mobileLayout.matches && anchor.hasAttribute('data-app-back')) setFilter(currentFilter, currentValue, true, libraryUrl);
+    else setFilter('all', '', true, '/blog/');
+    return;
+  }
   if (anchor.dataset.desktopFilter) {
     event.preventDefault();
     library.classList.remove('sidebar-open');
@@ -516,7 +521,7 @@ document.addEventListener('keydown', (event) => {
     event.preventDefault();
     showSearch();
   }
-  if (event.key === 'Escape' && activeWindow && activeWindow !== library && isVisible(activeWindow)) closeWindow(activeWindow);
+  if (event.key === 'Escape' && !mobileLayout.matches && activeWindow && activeWindow !== library && isVisible(activeWindow)) closeWindow(activeWindow);
 });
 window.addEventListener('popstate', () => {
   const filter = pathFilter();
@@ -575,9 +580,18 @@ document.addEventListener('pointerdown', (event) => { if (!isDockTarget(event.ta
 window.addEventListener('resize', scheduleDockOverlap);
 scheduleDockOverlap();
 
-mobileLayout.addEventListener('change', syncWindowAccess);
+mobileLayout.addEventListener('change', () => {
+  dismissDisclosure();
+  if (mobileLayout.matches && (!activeWindow || !isVisible(activeWindow))) {
+    const next = [...dockItems.keys()].filter(isVisible).sort((a, b) => Number(b.style.zIndex) - Number(a.style.zIndex))[0] ?? library;
+    focusWindow(next);
+    history.replaceState(history.state, '', windowRoute(next));
+    document.title = blogTitle(windowTitle(next));
+  }
+  syncWindowAccess();
+});
 window.addEventListener('resize', () => {
-  for (const win of dockItems.keys()) fitWindow(win);
+  if (!mobileLayout.matches) for (const win of dockItems.keys()) fitWindow(win);
 });
 
 const themeButton = document.querySelector<HTMLButtonElement>('[data-theme-toggle]')!;
@@ -650,13 +664,13 @@ document.querySelectorAll<HTMLButtonElement>('[data-set-language]').forEach((but
   try { localStorage.setItem('desktop-language', language); } catch { /* Language remains applied for this page. */ }
   dismissDisclosure(true);
 }));
-document.querySelector<HTMLButtonElement>('[data-copy-email]')!.addEventListener('click', (event) => {
+document.querySelectorAll<HTMLButtonElement>('[data-copy-email]').forEach((control) => control.addEventListener('click', (event) => {
   const button = event.currentTarget as HTMLButtonElement;
   navigator.clipboard.writeText(button.dataset.copyEmail!)
     .then(() => announce(t('emailCopied')))
     .catch(() => announce(t('copyEmailFailed')));
   dismissDisclosure(true);
-});
+}));
 document.querySelectorAll<HTMLButtonElement>('[data-quick-action]').forEach((button) => button.addEventListener('click', () => {
   const action = button.dataset.quickAction;
   if (action === 'library') setFilter('all', '', true, '/blog/');

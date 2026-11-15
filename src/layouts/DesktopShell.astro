@@ -11,6 +11,7 @@ import { getAllPosts, sortPostsByPinAndDate, translationKey } from '@utils/blogU
 import '@/styles/desktop.css';
 import '@/styles/shell.css';
 import '@/styles/motion.css';
+import '@/styles/mobile.css';
 import 'katex/dist/katex.min.css';
 
 interface Props {
@@ -33,6 +34,7 @@ const navItems = [
   { label: '归档', href: '/blog/archives/', icon: 'document-open-recent', kind: 'archives' },
 ];
 const filterLabels: Record<string, string> = { all: '全部文章', categories: '分类', tags: '标签', archives: '归档', search: '搜索结果', category: filterValue, tag: filterValue };
+const desktopMedia = '(width > 760px) and ((height > 480px) or (pointer: fine) or (pointer: none))';
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
 const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Shanghai' }).format(d);
 ---
@@ -51,8 +53,8 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
     <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/png" href="/profile.png" />
     <link rel="alternate" type="application/rss+xml" title="xiaozhangup 的博客" href="/rss.xml" />
-    <link rel="preload" as="image" href="/wallpapers/desktop-wide.jpg" media="(aspect-ratio <= 21/10)" />
-    <link rel="preload" as="image" href="/wallpapers/desktop-ultrawide.jpg" media="(aspect-ratio > 21/10)" />
+    <link rel="preload" as="image" href="/wallpapers/desktop-wide.jpg" media={`${desktopMedia} and (aspect-ratio <= 21/10)`} />
+    <link rel="preload" as="image" href="/wallpapers/desktop-ultrawide.jpg" media={`${desktopMedia} and (aspect-ratio > 21/10)`} />
     <title>{title} · xiaozhangup 的博客</title>
   </head>
   <body data-initial-window={initialWindow} data-initial-filter={initialFilter} data-filter-value={filterValue}>
@@ -181,6 +183,10 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
 
       <section class="window window--about" data-window="about" data-visible={initialWindow === 'about' ? '' : undefined} data-active={initialWindow === 'about' ? '' : undefined} inert={initialWindow !== 'about'} aria-label="关于博客">
         <header class="window-header">
+          <div class="mobile-about-back mobile-only">
+            <a href="/blog/" data-open-library data-app-back class="toolbar-icon" data-i18n-aria="backToPosts" aria-label="返回文章列表"><AdwIcon name="go-previous" /></a>
+          </div>
+          <span class="mobile-about-title mobile-only" data-i18n="aboutShort">关于</span>
           <button type="button" class="window-drag" data-drag-handle data-i18n-aria="moveWindow" aria-label="移动窗口，使用方向键调整位置" title="移动窗口，使用方向键调整位置"><span class="window-title" data-i18n="aboutShort">关于</span></button>
           <div class="window-controls"><WindowControls name="about" /></div>
         </header>

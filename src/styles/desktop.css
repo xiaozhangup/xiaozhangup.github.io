@@ -452,24 +452,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
 @media (aspect-ratio > 21/10) {
   .desktop { background-image: url('/wallpapers/desktop-ultrawide.jpg'); }
 }
-@media (max-width: 760px) {
-  :root { --shell-height: 32px; }
-  .desktop-icons { display: none; }
-  .desktop { --dock-left: 3px; --dock-width: 46px; }
-  .dock { gap: 2px; padding: 6px 3px; border-radius: 14px; }
-  .dock-item { width: 40px; height: 40px; }
-  .dock-app { width: 36px; height: 36px; }
-  .dock-item::after { display: none; }
-  .dock-dot { left: -2px; }
-  .window--library, .window--reader, .window--about {
-    left: 53px;
-    top: calc(var(--shell-height) + 6px);
-    width: calc(100vw - 59px);
-    height: calc(100dvh - var(--shell-height) - 12px);
-  }
-  .window--about { height: min(378px, calc(100dvh - var(--shell-height) - 12px)); top: max(calc(var(--shell-height) + 6px), calc(50% - 189px)); }
-  .article-document { padding: 28px 20px 48px; }
-}
 @media (pointer: coarse) {
   :root { --shell-height: 44px; }
   .dock-edge { width: 24px; }

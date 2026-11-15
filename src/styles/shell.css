@@ -279,27 +279,6 @@ html[data-theme='light'] .music-wave { color: var(--wave-light, #414146); }
 .calendar-grid .day-name, .calendar-grid .other-month { color: rgb(255 255 255 / 52%); }
 .calendar-grid [aria-current='date'] { background: var(--shell-accent); }
 
-@media (max-width: 760px) {
-  .topbar { font-size: 11px; }
-  .topbar-start, .topbar-end { gap: 3px; }
-  .shell-trigger { padding-inline: 5px; min-height: 28px; }
-  .quick-trigger { gap: 5px; }
-  .quick-trigger .adw-icon { width: 12px; height: 12px; }
-  .workspace-indicator { display: none; }
-  .music-menu { flex-basis: 104px; }
-  .music-pill { font-size: 11px; gap: 4px; }
-  .pill-wave { display: none; }
-}
-@media (max-width: 540px) {
-  .clock-popover.has-music { display: flex; flex-direction: column; max-width: min(328px, calc(100vw - 12px)); }
-  .clock-media { padding: 0 0 10px; border-inline-end: 0; border-bottom: 1px solid rgb(255 255 255 / 10%); }
-  .has-music .calendar-pane { padding-inline: 8px; }
-}
-@media (max-width: 395px) {
-  .music-menu { flex: 0 0 24px; }
-  .music-pill { justify-content: center; padding: 0; }
-  .music-pill-label { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); }
-}
 @media (pointer: coarse) {
   .shell-trigger, .music-pill { min-height: 40px; }
   .shell-list-row, .quick-action, .spotify-open { min-height: 44px; }

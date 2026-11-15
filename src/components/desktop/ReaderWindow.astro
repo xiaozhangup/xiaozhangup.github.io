@@ -8,8 +8,9 @@ const { title = '文章', url, visible = false } = Astro.props;
 ---
 <section class="window window--reader" data-window="reader" data-visible={visible ? '' : undefined} data-active={visible ? '' : undefined} inert={!visible} data-article-url={url} aria-label="文章阅读器">
   <header class="window-header">
-    <div class="window-header-leading"><a href="/blog/" data-open-library class="toolbar-icon" data-i18n-aria="backToPosts" aria-label="返回文章列表" title="返回文章列表"><AdwIcon name="go-previous" /></a></div>
+    <div class="window-header-leading"><a href="/blog/" data-open-library data-app-back class="toolbar-icon" data-i18n-aria="backToPosts" aria-label="返回文章列表" title="返回文章列表"><AdwIcon name="go-previous" /></a></div>
     <button type="button" class="window-drag" data-drag-handle data-i18n-aria="moveWindow" aria-label="移动窗口，使用方向键调整位置" title="移动窗口，使用方向键调整位置"><span class="window-title" data-reader-title>{title}</span></button>
+    <span class="mobile-reader-title mobile-only" data-reader-title>{title}</span>
     <div class="window-controls">
       <button type="button" class="toolbar-icon" data-copy-link data-i18n-aria="copyLink" aria-label="复制文章链接" title="复制文章链接"><AdwIcon name="insert-link" /></button>
       <WindowControls name="reader" />
