@@ -19,7 +19,9 @@ const pendingReaders = new Map<string, Promise<HTMLElement>>();
 const dockItems = new Map<HTMLElement, HTMLAnchorElement>();
 const searchForm = document.querySelector<HTMLFormElement>('[data-search-form]')!;
 const libraryPath = document.querySelector<HTMLElement>('[data-library-path]')!;
-const searchButton = document.querySelector<HTMLButtonElement>('[data-focus-search]')!;
+const searchButton = document.querySelector<HTMLButtonElement>('[data-focus-search]:not([data-mobile-search])')!;
+const mobileSearchButton = document.querySelector<HTMLButtonElement>('[data-mobile-search]')!;
+const appLanguage = document.querySelector<HTMLSelectElement>('[data-app-language]')!;
 const searchInput = document.querySelector<HTMLInputElement>('[data-search]')!;
 const heading = document.querySelector<HTMLElement>('[data-library-heading]')!;
 const breadcrumb = document.querySelector<HTMLElement>('[data-breadcrumb]')!;
@@ -148,9 +150,10 @@ function pushUrl(url: string) {
   if (location.pathname + location.search + location.hash !== url) history.pushState({}, '', url);
 }
 function setSearchVisible(open: boolean) {
-  searchForm.hidden = !open && !mobileLayout.matches;
+  searchForm.hidden = !open;
   libraryPath.hidden = open;
   searchButton.setAttribute('aria-expanded', String(open));
+  mobileSearchButton.setAttribute('aria-expanded', String(open));
 }
 function showSearch() {
   articleRequest++;
@@ -167,7 +170,7 @@ function hideSearch() {
     setSearchVisible(false);
     filterPosts();
   }
-  const trigger = mobileLayout.matches ? heading : searchButton.offsetWidth ? searchButton : library.querySelector<HTMLButtonElement>('[data-disclosure-trigger]')!;
+  const trigger = mobileLayout.matches ? mobileSearchButton : searchButton.offsetWidth ? searchButton : library.querySelector<HTMLButtonElement>('[data-disclosure-trigger]')!;
   trigger.focus();
 }
 function setFilter(kind: FilterKind, value = '', updateUrl = false, url = '/blog/') {
@@ -358,7 +361,7 @@ function focusNextWindow() {
 }
 function syncSidebar() {
   const compact = library.classList.contains('is-compact');
-  const open = mobileLayout.matches || (compact ? library.classList.contains('sidebar-open') : !library.classList.contains('sidebar-hidden'));
+  const open = compact ? library.classList.contains('sidebar-open') : !library.classList.contains('sidebar-hidden');
   sidebar.inert = !open;
   sidebarToggle.setAttribute('aria-expanded', String(open));
 }
@@ -582,7 +585,6 @@ scheduleDockOverlap();
 
 mobileLayout.addEventListener('change', () => {
   dismissDisclosure();
-  setSearchVisible(searchButton.getAttribute('aria-expanded') === 'true');
   syncSidebar();
   if (mobileLayout.matches && (!activeWindow || !isVisible(activeWindow))) {
     const next = [...dockItems.keys()].filter(isVisible).sort((a, b) => Number(b.style.zIndex) - Number(a.style.zIndex))[0] ?? library;
@@ -639,6 +641,7 @@ setInterval(updateClock, 30_000);
 function applyLanguage(next: Language) {
   language = next;
   document.documentElement.lang = language === 'zh' ? 'zh-CN' : 'en';
+  appLanguage.value = language;
   translateStatic();
   document.querySelector<HTMLElement>('[data-language-indicator]')!.textContent = language === 'zh' ? '拼' : 'EN';
   document.querySelectorAll<HTMLButtonElement>('[data-set-language]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.setLanguage === language)));
@@ -661,9 +664,13 @@ function applyLanguage(next: Language) {
     document.title = blogTitle(windowTitle(activeWindow));
   } else activeTitle.textContent = t('desktop');
 }
-document.querySelectorAll<HTMLButtonElement>('[data-set-language]').forEach((button) => button.addEventListener('click', () => {
-  applyLanguage(button.dataset.setLanguage as Language);
+function changeLanguage(next: Language) {
+  applyLanguage(next);
   try { localStorage.setItem('desktop-language', language); } catch { /* Language remains applied for this page. */ }
+}
+appLanguage.addEventListener('change', () => changeLanguage(appLanguage.value as Language));
+document.querySelectorAll<HTMLButtonElement>('[data-set-language]').forEach((button) => button.addEventListener('click', () => {
+  changeLanguage(button.dataset.setLanguage as Language);
   dismissDisclosure(true);
 }));
 document.querySelectorAll<HTMLButtonElement>('[data-copy-email]').forEach((control) => control.addEventListener('click', (event) => {

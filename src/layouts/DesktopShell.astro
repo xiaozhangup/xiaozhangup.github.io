@@ -32,7 +32,10 @@ const navItems = [
   { label: '分类', href: '/blog/categories/', icon: 'folder', kind: 'categories' },
   { label: '标签', href: '/blog/tags/', icon: 'user-bookmarks', kind: 'tags' },
   { label: '归档', href: '/blog/archives/', icon: 'document-open-recent', kind: 'archives' },
-];
+].map((item) => ({
+  ...item,
+  selected: initialFilter === item.kind || initialFilter === 'category' && item.kind === 'categories' || initialFilter === 'tag' && item.kind === 'tags',
+}));
 const filterLabels: Record<string, string> = { all: '全部文章', categories: '分类', tags: '标签', archives: '归档', search: '搜索结果', category: filterValue, tag: filterValue };
 const desktopMedia = '(width > 760px) and ((height > 480px) or (pointer: fine) or (pointer: none))';
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
@@ -86,6 +89,7 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
         <header class="window-header">
           <div class="window-header-leading">
             <button type="button" class="toolbar-icon sidebar-toggle" data-toggle-sidebar data-i18n-aria="showSidebar" aria-controls="library-sidebar" aria-expanded="true" aria-label="显示或隐藏侧栏" title="显示或隐藏侧栏"><AdwIcon name="sidebar-show" /></button>
+            <button type="button" class="toolbar-icon mobile-only app-search-toggle" data-mobile-search data-focus-search data-i18n-aria="searchAction" aria-controls="library-search" aria-expanded={initialFilter === 'search' ? 'true' : 'false'} aria-label="搜索文章" title="搜索文章"><AdwIcon name="system-search" /></button>
             <span class="window-name" data-i18n="posts">文章</span>
           </div>
           <button type="button" class="window-drag" data-drag-handle data-i18n-aria="moveWindow" aria-label="移动窗口，使用方向键调整位置" title="移动窗口，使用方向键调整位置"></button>
@@ -108,7 +112,7 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
           <aside class="library-sidebar" id="library-sidebar">
             <nav class="library-nav" data-i18n-aria="postNavigation" aria-label="文章导航">
               {navItems.map((item) => (
-                <a href={item.href} data-desktop-filter={item.kind} class:list={['side-link', (initialFilter === item.kind || initialFilter === 'category' && item.kind === 'categories' || initialFilter === 'tag' && item.kind === 'tags') && 'is-selected']}>
+                <a href={item.href} data-desktop-filter={item.kind} class:list={['side-link', item.selected && 'is-selected']}>
                   <AdwIcon name={item.icon} /><span data-i18n={item.kind === 'all' ? 'allPosts' : item.kind}>{item.label}</span>
                 </a>
               ))}
@@ -178,6 +182,14 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
             </div>
           </div>
         </div>
+        <nav class="mobile-only app-view-switcher" data-i18n-aria="postNavigation" aria-label="文章导航">
+          {navItems.map((item) => (
+            <a href={item.href} data-desktop-filter={item.kind} aria-current={item.selected ? 'page' : undefined}>
+              <AdwIcon name={item.kind === 'all' ? 'text-x-generic' : item.icon} />
+              <span data-i18n={item.kind === 'all' ? 'allPosts' : item.kind}>{item.label}</span>
+            </a>
+          ))}
+        </nav>
         <WindowResizeAreas />
       </section>
 
