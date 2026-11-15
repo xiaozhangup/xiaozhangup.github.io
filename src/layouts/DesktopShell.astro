@@ -1,0 +1,153 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { Icon } from 'astro-icon/components';
+import { getAllPosts, sortPostsByPinAndDate } from '@utils/blogUtils';
+import '@/styles/desktop.css';
+import 'katex/dist/katex.min.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  initialWindow?: 'library' | 'reader' | 'about';
+  initialFilter?: 'all' | 'categories' | 'tags' | 'archives' | 'search' | 'category' | 'tag';
+  filterValue?: string;
+  article?: CollectionEntry<'blog'>;
+}
+const { title = '文章', description = 'xiaozhangup 的个人博客', initialWindow = 'library', initialFilter = 'all', filterValue = '', article } = Astro.props;
+const posts = sortPostsByPinAndDate(await getAllPosts());
+const categories = [...new Set(posts.flatMap((post) => post.data.categories ?? []))].sort((a, b) => a.localeCompare(b, 'zh-CN'));
+const tags = [...new Set(posts.flatMap((post) => post.data.tags ?? []))].sort((a, b) => a.localeCompare(b, 'zh-CN'));
+const navItems = [
+  { label: '全部文章', href: '/blog/', icon: 'lucide:files', kind: 'all' },
+  { label: '分类', href: '/blog/categories/', icon: 'lucide:folder', kind: 'categories' },
+  { label: '标签', href: '/blog/tags/', icon: 'lucide:tags', kind: 'tags' },
+  { label: '归档', href: '/blog/archives/', icon: 'lucide:archive', kind: 'archives' },
+];
+const filterLabels: Record<string, string> = { all: '全部文章', categories: '分类', tags: '标签', archives: '归档', search: '搜索结果', category: filterValue, tag: filterValue };
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const endpoint = import.meta.env.PUBLIC_SPOTIFY_ENDPOINT;
+const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Shanghai' }).format(d);
+---
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#171b20" />
+    <meta property="og:title" content={`${title} · xiaozhangup`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content={article ? 'article' : 'website'} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={new URL('/profile.png', Astro.site).href} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/png" href="/profile.png" />
+    <link rel="alternate" type="application/rss+xml" title="xiaozhangup 的博客" href="/rss.xml" />
+    <link rel="preload" as="image" href="/desktop-wallpaper.png" />
+    <title>{title} · xiaozhangup 的博客</title>
+  </head>
+  <body data-initial-window={initialWindow} data-initial-filter={initialFilter} data-filter-value={filterValue}>
+    <a class="skip-link" href="#desktop-main">跳到主要内容</a>
+    <header class="topbar">
+      <div class="topbar-start"><span class="workspace-indicator" aria-hidden="true"><i></i><i></i><i></i></span><a href="/" class="topbar-brand">xiaozhangup</a><span class="topbar-divider"></span><span class="topbar-app" data-active-title>文章</span></div>
+      <time class="topbar-clock" data-clock aria-label="当前日期和时间">博客桌面</time>
+      <div class="topbar-end">
+        {endpoint && <a class="music-pill" data-spotify-endpoint={endpoint} data-spotify-link href="https://open.spotify.com/" target="_blank" rel="noopener noreferrer" aria-label="Spotify 播放状态">
+          <span class="music-symbol"><Icon name="simple-icons:spotify" /></span><span data-spotify-text>Spotify</span><span class="music-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        </a>}
+        <button class="topbar-theme" type="button" data-theme-toggle aria-label="切换浅色或深色外观" title="切换外观"><Icon name="lucide:sun-moon" /></button>
+        <img class="topbar-avatar" src="/profile.png" width="26" height="26" alt="" />
+      </div>
+    </header>
+    <main id="desktop-main" class="desktop" tabindex="-1">
+      <nav class="dock" aria-label="桌面应用">
+        <a class="dock-item is-running" href="/blog/" data-open-library data-tooltip="文章" aria-label="打开文章"><span class="dock-icon dock-icon--files"><Icon name="lucide:folder-open" /></span><span class="dock-dot"></span></a>
+        <button type="button" class="dock-item dock-reader" data-restore-reader data-tooltip="阅读器" aria-label="恢复阅读器窗口" hidden={initialWindow !== 'reader'}><span class="dock-icon dock-icon--reader"><Icon name="lucide:file-text" /></span><span class="dock-dot"></span></button>
+        <a class="dock-item" href="/blog/categories/" data-desktop-filter="categories" data-tooltip="分类" aria-label="打开分类"><span class="dock-icon dock-icon--categories"><Icon name="lucide:layout-grid" /></span></a>
+        <a class="dock-item" href="/blog/tags/" data-desktop-filter="tags" data-tooltip="标签" aria-label="打开标签"><span class="dock-icon dock-icon--tags"><Icon name="lucide:tags" /></span></a>
+        <a class="dock-item" href="/blog/search/" data-desktop-filter="search" data-tooltip="搜索" aria-label="搜索文章"><span class="dock-icon dock-icon--search"><Icon name="lucide:search" /></span></a>
+        <div class="dock-separator"></div>
+        <a class="dock-item" href="/about/" data-open-about data-tooltip="关于" aria-label="关于博客"><span class="dock-icon dock-icon--about"><Icon name="lucide:user-round" /></span></a>
+        <a class="dock-item" href="https://github.com/xiaozhangup" target="_blank" rel="noopener noreferrer" data-tooltip="GitHub" aria-label="打开 GitHub"><span class="dock-icon dock-icon--github"><Icon name="simple-icons:github" /></span></a>
+        <div class="dock-spacer"></div>
+        <a class="dock-item" href="/rss.xml" data-tooltip="RSS 订阅" aria-label="RSS 订阅"><span class="dock-icon dock-icon--rss"><Icon name="lucide:rss" /></span></a>
+      </nav>
+
+      <div class="desktop-icons" aria-label="桌面快捷方式">
+        <a href="/blog/" data-open-library class="desktop-shortcut"><span class="shortcut-icon"><Icon name="lucide:folder-closed" /></span><span>文章</span></a>
+        <a href="/blog/archives/" data-desktop-filter="archives" class="desktop-shortcut"><span class="shortcut-icon shortcut-icon--archive"><Icon name="lucide:archive" /></span><span>归档</span></a>
+        <a href="/about/" data-open-about class="desktop-shortcut"><span class="shortcut-icon shortcut-icon--about"><Icon name="lucide:contact-round" /></span><span>关于</span></a>
+      </div>
+
+      <section class="window window--library" data-window="library" aria-label="文章管理器">
+        <header class="window-header">
+          <div class="window-header-leading"><span class="header-app-icon"><Icon name="lucide:folder-open" /></span><span class="window-name">文章</span></div>
+          <button type="button" class="window-drag" data-drag-handle aria-label="移动文章窗口，使用方向键调整位置" title="拖动窗口，或使用方向键移动"><span>文章管理器</span></button>
+          <div class="window-controls">
+            <button type="button" class="window-control" data-center title="窗口居中" aria-label="将文章窗口居中"><Icon name="lucide:move" /></button>
+            <button type="button" class="window-control" data-minimize title="最小化" aria-label="最小化文章窗口"><Icon name="lucide:minus" /></button>
+            <button type="button" class="window-control" data-maximize title="最大化" aria-label="最大化或还原文章窗口"><Icon name="lucide:square" /></button>
+            <a class="window-control window-control--close" href="/" data-close-window="library" title="关闭" aria-label="关闭文章窗口"><Icon name="lucide:x" /></a>
+          </div>
+        </header>
+        <div class="library-layout">
+          <aside class="library-sidebar">
+            <div class="sidebar-label">浏览</div>
+            <nav class="library-nav" aria-label="文章导航">
+              {navItems.map(item => <a href={item.href} data-desktop-filter={item.kind} class:list={['side-link', (initialFilter === item.kind || initialFilter === 'category' && item.kind === 'categories' || initialFilter === 'tag' && item.kind === 'tags') && 'is-selected']}><Icon name={item.icon} /><span>{item.label}</span>{item.kind === 'all' && <span class="side-count">{posts.length}</span>}</a>)}
+            </nav>
+            <div class="sidebar-label sidebar-label--section">分类</div>
+            <nav class="library-nav library-nav--sub" aria-label="文章分类">
+              {categories.length ? categories.map(category => <a href={`/blog/category/${encodeURIComponent(category)}/`} data-desktop-filter="category" data-value={category} class:list={['side-link', initialFilter === 'category' && filterValue === category && 'is-selected']}><Icon name="lucide:folder" /><span>{category}</span></a>) : <span class="sidebar-empty">暂无分类</span>}
+            </nav>
+            <div class="sidebar-bottom"><div class="profile-mini"><img src="/profile.png" width="32" height="32" alt="" /><span><strong>xiaozhangup</strong><small>个人博客</small></span></div><a href="https://github.com/xiaozhangup" target="_blank" rel="noopener noreferrer" aria-label="访问 GitHub"><Icon name="lucide:external-link" /></a></div>
+          </aside>
+          <div class="library-main">
+            <div class="library-toolbar"><div class="breadcrumbs"><Icon name="lucide:house" /><span>/</span><strong data-breadcrumb>{filterLabels[initialFilter]}</strong></div><button type="button" class="toolbar-icon" data-focus-search aria-label="搜索文章" title="搜索"><Icon name="lucide:search" /></button></div>
+            <div class="library-scroll">
+              <div class="library-intro"><div><span class="eyebrow">THE PERSONAL DESKTOP</span><h1 data-library-heading tabindex="-1">{filterLabels[initialFilter]}</h1><p data-list-summary>{posts.length} 篇文章 · 记录一些想法与故事</p></div><span class="intro-icon" aria-hidden="true"><Icon name="lucide:notebook-pen" /></span></div>
+              <form class="search-box" action="/blog/search/" role="search" data-search-form><Icon name="lucide:search" /><input type="search" name="q" placeholder="搜索文章、分类或标签" aria-label="搜索文章、分类或标签" data-search /><kbd>/</kbd></form>
+              <div class="filter-chips" data-category-chips hidden={initialFilter !== 'categories'}>
+                {categories.map(category => <a href={`/blog/category/${encodeURIComponent(category)}/`} data-desktop-filter="category" data-value={category}><Icon name="lucide:folder" />{category}</a>)}
+              </div>
+              <div class="filter-chips" data-tag-chips hidden={initialFilter !== 'tags'}>
+                {tags.map(tag => <a href={`/blog/tag/${encodeURIComponent(tag)}/`} data-desktop-filter="tag" data-value={tag}><Icon name="lucide:hash" />{tag}</a>)}
+              </div>
+              <div class="list-heading"><span data-list-label>最近的文章</span><span>日期</span></div>
+              <div class="post-list" data-post-list>
+                {posts.map((post, index) => {
+                  const matches = initialFilter === 'category' ? (post.data.categories ?? []).includes(filterValue) : initialFilter === 'tag' ? (post.data.tags ?? []).includes(filterValue) : true;
+                  return <article class="post-row" data-post-row data-title={post.data.title.toLocaleLowerCase()} data-description={post.data.description.toLocaleLowerCase()} data-categories={JSON.stringify(post.data.categories ?? [])} data-tags={JSON.stringify(post.data.tags ?? [])} hidden={!matches}>
+                    <a class="post-main" href={`/blog/${post.id}/`} data-open-article><span class:list={['post-file-icon', index % 3 === 1 && 'post-file-icon--purple', index % 3 === 2 && 'post-file-icon--green']}><Icon name="lucide:file-text" /></span><span class="post-copy"><strong>{post.data.title}</strong><small>{post.data.description}</small><span class="post-tags">{(post.data.categories ?? []).slice(0, 1).map(category => <span>{category}</span>)}{(post.data.tags ?? []).slice(0, 2).map(tag => <span>#{tag}</span>)}</span></span></a>
+                    <time class="post-date" datetime={post.data.pubDate.toISOString()}>{date(post.data.pubDate)}</time>
+                  </article>;
+                })}
+                <div class="empty-list" data-empty-list hidden><Icon name="lucide:search-x" /><strong>没有找到文章</strong><span>换个关键词或查看全部文章。</span></div>
+              </div>
+              <div class="library-footnote"><span>xiaozhangup 的博客</span><span>用心记录，慢慢分享</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="window-status"><span data-status-count>{posts.length} 篇文章</span><span>Markdown · Astro</span></div>
+      </section>
+
+      <section class="window window--reader" data-window="reader" data-article-url={article ? `/blog/${article.id}/` : undefined} aria-label="文章阅读器" hidden={initialWindow !== 'reader'}>
+        <header class="window-header">
+          <div class="window-header-leading"><span class="header-app-icon header-app-icon--reader"><Icon name="lucide:file-text" /></span><span class="window-name">阅读器</span></div>
+          <button type="button" class="window-drag" data-drag-handle aria-label="移动阅读器窗口，使用方向键调整位置" title="拖动窗口，或使用方向键移动"><span data-reader-title>{article?.data.title ?? '文章'}</span></button>
+          <div class="window-controls"><button type="button" class="window-control" data-center title="窗口居中" aria-label="将阅读器窗口居中"><Icon name="lucide:move" /></button><button type="button" class="window-control" data-minimize title="最小化" aria-label="最小化阅读器窗口"><Icon name="lucide:minus" /></button><button type="button" class="window-control" data-maximize title="最大化" aria-label="最大化或还原阅读器窗口"><Icon name="lucide:square" /></button><a class="window-control window-control--close" href="/blog/" data-close-window="reader" title="关闭" aria-label="关闭阅读器"><Icon name="lucide:x" /></a></div>
+        </header>
+        <div class="reader-toolbar"><a href="/blog/" data-open-library><Icon name="lucide:arrow-left" /><span>所有文章</span></a><span data-reader-toolbar-title>{article?.data.title ?? '文章'}</span><button type="button" class="toolbar-icon" data-copy-link aria-label="复制文章链接" title="复制文章链接"><Icon name="lucide:link" /></button></div>
+        <div class="reader-scroll" data-reader-content><slot name="article" /></div>
+      </section>
+
+      <section class="window window--about" data-window="about" aria-label="关于博客" hidden={initialWindow !== 'about'}>
+        <header class="window-header"><div class="window-header-leading"><span class="header-app-icon header-app-icon--about"><Icon name="lucide:user-round" /></span><span class="window-name">关于</span></div><button type="button" class="window-drag" data-drag-handle aria-label="移动关于窗口，使用方向键调整位置"><span>关于这个博客</span></button><div class="window-controls"><button type="button" class="window-control" data-center aria-label="将关于窗口居中" title="窗口居中"><Icon name="lucide:move" /></button><button type="button" class="window-control" data-minimize aria-label="最小化关于窗口" title="最小化"><Icon name="lucide:minus" /></button><a href="/blog/" class="window-control window-control--close" data-close-window="about" aria-label="关闭关于窗口" title="关闭"><Icon name="lucide:x" /></a></div></header>
+        <div class="about-content"><img src="/profile.png" width="92" height="92" alt="" /><h2>xiaozhangup</h2><p>欢迎来到我的个人博客。</p><div class="about-links"><a href="https://github.com/xiaozhangup" target="_blank" rel="noopener noreferrer"><Icon name="simple-icons:github" /> GitHub</a><a href="/rss.xml"><Icon name="lucide:rss" /> RSS 订阅</a></div></div>
+      </section>
+      <div class="desktop-caption"><span>xiaozhangup</span><span>一个记录想法的小地方</span></div>
+      <div class="visually-hidden" aria-live="polite" data-announcer></div>
+    </main>
+    <script src="../desktop/desktop.ts"></script>
+  </body>
+</html>

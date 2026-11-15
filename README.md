@@ -2,7 +2,7 @@
 
 站点：https://blog.xiaozhangup.me
 
-使用 Astro 和 [Frosti](https://github.com/EveSunMaple/Frosti) 主题，包含首页最新文章、分页文章列表、分类、标签、归档、搜索、RSS 和深浅色模式。
+使用 Astro 内容集合和自制的 GNOME / libadwaita 风格桌面界面，包含文章管理器、Markdown 阅读窗口、分类、标签、归档、全文搜索、RSS 和深浅色模式。
 
 ## 本地开发
 
@@ -46,15 +46,21 @@ draft: false
 也可在 Actions 页面手动运行。Pages Source 使用 GitHub Actions，域名和强制 HTTPS 保持启用。
 
 - `frosti.config.yaml`：名称、简介、主题颜色、导航、社交链接和每页文章数。
-- `src/pages/index.astro`：首页。
-- `src/pages/about.astro`：关于页。
+- `src/layouts/DesktopShell.astro`：桌面、Dock 和窗口结构。
+- `src/styles/desktop.css`：桌面样式。
+- `src/desktop/desktop.ts`：窗口操作、导航、搜索和 Spotify 状态。
+- `src/pages/index.astro`：首页入口。
+- `src/pages/about.astro`：关于窗口入口。
+- `src/pages/blog/[...slug].astro`：Markdown 文章页面与独立链接。
 - `src/content/blog/`：文章。
 - `public/profile.png`：头像及站点图标。
 - `public/CNAME`：自定义域名。
 
-## 主题来源
+## 界面与内容
 
-Frosti 4.1.0，上游提交 `e8ebaa9a1a04784686ca403e882a95e04f9b8bf6`。保留上游 MIT 许可证及页脚署名，清理了演示文章、演示项目和作者个人资料，并配置中文界面。
+桌面左侧 Dock 可打开文章、分类、标签、搜索和关于窗口。文章窗口支持关闭、最小化、恢复、最大化和拖动；聚焦窗口标题后可用方向键移动，点击窗口的移动按钮可居中。手机端 Dock 位于底部。文章正文由 Astro 在构建时渲染，全文搜索由 Pagefind 索引生成。
+
+`public/desktop-wallpaper.png` 是为该桌面生成的插画壁纸。项目保留了原 Frosti 模板所需的 MIT 许可证及部分 Markdown / MDX 组件。
 
 ## Spotify 播放状态
 
