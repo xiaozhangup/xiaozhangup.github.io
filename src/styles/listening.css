@@ -1,26 +1,3 @@
-.topbar[data-recent] .music-pill .music-wave { display: none; }
-.music-recent-icon { display: flex; align-items: center; color: var(--music-muted); }
-.music-recent-icon .adw-icon { width: 14px; height: 14px; }
-
-.music-recent { display: grid; gap: 12px; }
-.music-recent .music-listening { padding: 0; }
-.music-recent .music-cover { width: 48px; border-radius: 8px; }
-.music-recent .music-track { text-align: start; }
-.music-recent-controls { display: flex; flex-wrap: wrap; gap: 6px; }
-.music-recent-controls button {
-  min-height: 30px;
-  padding: 4px 12px;
-  border: 0;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--music-fg) 10%, transparent);
-  color: inherit;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background-color var(--control-duration);
-}
-.music-recent-controls button:hover { background: color-mix(in srgb, var(--music-fg) 17%, transparent); }
-
 .music-listening {
   display: flex;
   align-items: center;
@@ -176,7 +153,7 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  html:not([data-motion='off']) :is(.music-window-scroll [role='tabpanel'], .music-recent):not([hidden]) {
+  html:not([data-motion='off']) .music-window-scroll [role='tabpanel']:not([hidden]) {
     animation: reveal-content 160ms var(--motion-ease) both;
   }
 }

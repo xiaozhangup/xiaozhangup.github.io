@@ -1,3 +1,4 @@
+import { dismissDisclosure } from './disclosures';
 import { alignCompactMusicStatus, coverColor, initMusicWaves } from './musicVisuals';
 
 interface Track {
@@ -35,6 +36,8 @@ export function initSpotify(t: (key: string) => string, mobile: MediaQueryList, 
   const historyEndpoint = new URL('/listening', endpoint).href;
   const pill = bar.querySelector<HTMLElement>('[data-spotify-pill]')!;
   const panel = bar.querySelector<HTMLElement>('.music-menu')!;
+  const clockMenu = bar.querySelector<HTMLElement>('.clock-menu')!;
+  const clockTrigger = clockMenu.querySelector<HTMLButtonElement>('.clock-trigger')!;
   const quickCard = bar.querySelector<HTMLElement>('.quick-music')!;
   const quickMenu = quickCard.closest<HTMLElement>('[data-disclosure]')!;
   const setWavePlaying = initMusicWaves(bar);
@@ -48,16 +51,12 @@ export function initSpotify(t: (key: string) => string, mobile: MediaQueryList, 
   }));
   const coverImages = Array.from(bar.querySelectorAll<HTMLImageElement>('[data-spotify-cover]'));
   const active = Array.from(bar.querySelectorAll<HTMLElement>('[data-spotify-playing]'));
-  const recent = Array.from(bar.querySelectorAll<HTMLElement>('[data-spotify-recent]'));
-  const display = Array.from(bar.querySelectorAll<HTMLElement>('[data-spotify-display]'));
-  const idle = Array.from(bar.querySelectorAll<HTMLElement>('[data-spotify-idle]'));
-  const statuses = Array.from(bar.querySelectorAll<HTMLElement>('[data-spotify-status]'));
+  const recent = clockMenu.querySelector<HTMLElement>('[data-spotify-recent]')!;
+  const display = clockMenu.querySelector<HTMLElement>('[data-spotify-display]')!;
+  const status = clockMenu.querySelector<HTMLElement>('[data-spotify-status]')!;
   const titles = Array.from(bar.querySelectorAll<HTMLElement>('[data-spotify-title]'));
   const artists = Array.from(bar.querySelectorAll<HTMLElement>('[data-spotify-artist]'));
   const links = Array.from(bar.querySelectorAll<HTMLAnchorElement>('[data-spotify-link]'));
-  const rotationControls = bar.querySelector<HTMLElement>('[data-history-controls]')!;
-  const pauseButton = bar.querySelector<HTMLButtonElement>('[data-history-pause]')!;
-  const nextButton = bar.querySelector<HTMLButtonElement>('[data-history-next]')!;
 
   let playback: Playback = { playing: false };
   let state: 'loading' | 'active' | 'idle' | 'unavailable' = 'loading';
@@ -71,7 +70,6 @@ export function initSpotify(t: (key: string) => string, mobile: MediaQueryList, 
   let historyKey: string | undefined;
   let recentOrder: Track[] = [];
   let recentIndex = 0;
-  let rotationPaused = false;
 
   function updateCoverColor(url: string | undefined) {
     if (url === currentCover) return;
@@ -89,10 +87,7 @@ export function initSpotify(t: (key: string) => string, mobile: MediaQueryList, 
     });
   }
   function updateLanguage() {
-    const status = t(state === 'idle' ? 'spotifyIdle' : state === 'unavailable' ? 'spotifyUnavailable' : 'spotifyLoading');
-    statuses.forEach((text) => { text.textContent = status; });
-    pauseButton.textContent = t(rotationPaused ? 'resumeRotation' : 'pauseRotation');
-    pauseButton.setAttribute('aria-pressed', String(rotationPaused));
+    status.textContent = t(state === 'idle' ? 'spotifyIdle' : state === 'unavailable' ? 'spotifyUnavailable' : 'spotifyLoading');
   }
 
   function runProgress() {
@@ -131,29 +126,37 @@ export function initSpotify(t: (key: string) => string, mobile: MediaQueryList, 
     const track = playback.playing ? playback : null;
     const recentTrack = state === 'idle' && !mobile.matches ? recentOrder[recentIndex] : undefined;
     const shown = track ?? recentTrack;
+    if (!track && !panel.hidden) {
+      const hadFocus = panel.contains(document.activeElement);
+      if (panel.hasAttribute('data-open')) dismissDisclosure();
+      if (hadFocus) clockTrigger.focus({ preventScroll: true });
+    }
+    panel.inert = !track;
+    panel.hidden = !track;
     bar!.toggleAttribute('data-playing', Boolean(track));
-    bar!.toggleAttribute('data-recent', Boolean(recentTrack));
     setWavePlaying(Boolean(track));
-    updateCoverColor(shown?.cover);
+    if (track) {
+      pill.textContent = `${track.title} • ${track.artist}`;
+      updateCoverColor(track.cover);
+      if (track.cover) bar!.style.setProperty('--track-art', `url("${track.cover.replaceAll('"', '%22')}")`);
+      else bar!.style.removeProperty('--track-art');
+    }
     quickCard.hidden = !track;
     active.forEach((node) => { node.hidden = !track; });
-    recent.forEach((node) => { node.hidden = !recentTrack; });
-    display.forEach((node) => { node.hidden = !shown; });
-    idle.forEach((node) => { node.hidden = Boolean(shown); });
-    rotationControls.hidden = recentOrder.length < 2;
-    pill.textContent = shown ? `${shown.title} • ${shown.artist}` : 'Spotify';
+    recent.hidden = !recentTrack;
+    display.hidden = !shown;
+    status.hidden = Boolean(shown);
     if (shown) {
       titles.forEach((node) => { node.textContent = shown.title; });
       artists.forEach((node) => { node.textContent = shown.artist; });
     }
     for (const img of coverImages) {
+      if (!track && !clockMenu.contains(img)) continue;
       if ((shown?.cover ?? null) === img.getAttribute('src')) continue;
       img.classList.remove('loaded');
       if (shown?.cover) img.src = shown.cover;
       else img.removeAttribute('src');
     }
-    if (shown?.cover) bar!.style.setProperty('--track-art', `url("${shown.cover.replaceAll('"', '%22')}")`);
-    else bar!.style.removeProperty('--track-art');
     for (const link of links) {
       const url = shown?.url;
       link.hidden = !url?.startsWith('https://open.spotify.com/');
@@ -210,20 +213,14 @@ export function initSpotify(t: (key: string) => string, mobile: MediaQueryList, 
     }
   }
 
-  function nextTrack() {
-    recentIndex = (recentIndex + 1) % recentOrder.length;
-    render();
-  }
-  nextButton.addEventListener('click', nextTrack);
-  pauseButton.addEventListener('click', () => {
-    rotationPaused = !rotationPaused;
-    updateLanguage();
-  });
   window.setInterval(() => {
-    if (state === 'idle' && recentOrder.length > 1 && !rotationPaused && !document.hidden && !mobile.matches) nextTrack();
+    if (state === 'idle' && recentOrder.length > 1 && !document.hidden && !mobile.matches) {
+      recentIndex = (recentIndex + 1) % recentOrder.length;
+      render();
+    }
   }, 14_000);
 
-  for (const menu of [panel, quickMenu, bar.querySelector<HTMLElement>('.clock-menu')!]) {
+  for (const menu of [panel, quickMenu, clockMenu]) {
     menu.addEventListener('disclosurechange', () => {
       runProgress();
       if (menu.hasAttribute('data-open') && (menu !== quickMenu || quickCard.clientWidth > 0)) void refresh();

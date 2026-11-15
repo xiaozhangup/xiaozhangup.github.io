@@ -32,7 +32,7 @@ const mobileContacts = menus.filter((menu) => menu.mobile !== false).flatMap((me
     <span class="visually-hidden" data-active-title>文章</span>
 
     {endpoint && (
-      <div class="shell-menu music-menu" data-disclosure data-align="center">
+      <div class="shell-menu music-menu" data-disclosure data-align="center" hidden>
         <button type="button" class="music-pill" data-disclosure-trigger aria-controls="music-menu" aria-expanded="false" aria-label="Spotify 播放状态" title="Spotify 播放状态" data-i18n-aria="spotifyStatus">
           <span class="music-symbol">
             <Icon name="simple-icons:spotify" aria-hidden="true" />
@@ -40,23 +40,10 @@ const mobileContacts = menus.filter((menu) => menu.mobile !== false).flatMap((me
           </span>
           <span class="music-pill-label" data-spotify-pill>Spotify</span>
           <MusicWave />
-          <span class="music-recent-icon" data-spotify-recent hidden><AdwIcon name="document-open-recent" /></span>
         </button>
 
         <div class="disclosure-panel shell-popover music-popover" id="music-menu" inert>
           <SpotifyPlayback />
-          <div class="music-recent" data-spotify-recent hidden>
-            <header class="music-listening"><AdwIcon name="document-open-recent" /><span data-i18n="recentlyPlayed">最近听过</span></header>
-            <div class="music-main">
-              <div class="music-cover"><Icon name="simple-icons:spotify" aria-hidden="true" /><img data-spotify-cover alt="" width="48" height="48" /></div>
-              <div class="music-track"><strong data-spotify-title></strong><span data-spotify-artist></span></div>
-              <a class="spotify-open" data-spotify-link target="_blank" rel="noopener noreferrer" data-i18n-aria="openSpotify" aria-label="在 Spotify 打开" hidden><Icon name="simple-icons:spotify" aria-hidden="true" /></a>
-            </div>
-            <div class="music-recent-controls" data-history-controls hidden>
-              <button type="button" data-history-pause aria-pressed="false">暂停轮播</button>
-              <button type="button" data-history-next data-i18n="nextTrack">换一首</button>
-            </div>
-          </div>
         </div>
       </div>
     )}
@@ -71,7 +58,7 @@ const mobileContacts = menus.filter((menu) => menu.mobile !== false).flatMap((me
         <div class="clock-media">
           <div class="clock-media-card">
             <div class="clock-media-heading"><Icon name="simple-icons:spotify" aria-hidden="true" /> Spotify <span data-i18n="listeningNow" data-spotify-playing hidden>我正在听</span><span data-i18n="recentlyPlayed" data-spotify-recent hidden>最近听过</span></div>
-            <div class="clock-media-idle" data-spotify-status data-spotify-idle>正在读取播放状态</div>
+            <div class="clock-media-idle" data-spotify-status>正在读取播放状态</div>
             <div class="clock-media-track" data-spotify-display hidden>
               <div class="music-cover"><Icon name="simple-icons:spotify" aria-hidden="true" /><img data-spotify-cover alt="" width="40" height="40" /></div>
               <div class="clock-track-text"><strong data-spotify-title></strong><span data-spotify-artist></span></div>

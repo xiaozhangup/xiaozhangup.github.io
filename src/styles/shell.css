@@ -136,6 +136,19 @@ html:not([data-theme='light']) .status-light { display: none; }
   --music-border: rgb(255 255 255 / 20%);
 }
 .music-menu { flex: 0 1 192px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .music-menu {
+    transition: opacity var(--control-duration) ease-out, display var(--control-duration);
+    transition-behavior: allow-discrete;
+  }
+  .music-menu[hidden] { opacity: 0; }
+
+  @starting-style {
+    .music-menu:not([hidden]) { opacity: 0; }
+  }
+}
+
 html[data-theme='light'] :is(.music-menu, .quick-music) {
   --music-bg: color-mix(in srgb, var(--track-color, #39596b) 26%, #f8f8fa);
   --music-fg: #1c1c1e;
@@ -216,8 +229,6 @@ html[data-theme='light'] .music-wave { color: var(--wave-light, #414146); }
   filter: blur(24px) saturate(1.2);
   pointer-events: none;
 }
-.music-idle { display: flex; align-items: center; gap: 10px; min-height: 32px; }
-.music-idle svg { flex: none; width: 18px; height: 18px; color: var(--music-muted); }
 .music-playing { display: grid; gap: 14px; }
 .music-main { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 13px; }
 .music-track, .clock-track-text { display: flex; flex-direction: column; min-width: 0; gap: 4px; }
