@@ -397,7 +397,7 @@ const themeText = document.querySelector<HTMLElement>('[data-theme-text]')!;
 function applyTheme(theme: string) {
   document.documentElement.dataset.theme = theme;
   themeButton.setAttribute('aria-pressed', String(theme === 'dark'));
-  themeText.textContent = t(theme === 'dark' ? 'darkStyle' : 'lightStyle');
+  themeText.textContent = t('darkStyle');
 }
 try { applyTheme(localStorage.getItem('desktop-theme') || 'dark'); } catch { applyTheme('dark'); }
 themeButton.addEventListener('click', () => {
