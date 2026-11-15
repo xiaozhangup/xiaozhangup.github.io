@@ -75,8 +75,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
 .adw-icon { display: inline-block; width: 16px; height: 16px; flex: none; background: currentColor; mask: var(--adw-icon) center / contain no-repeat; }
 
 
-.desktop { position: fixed; inset: 0; overflow: hidden; isolation: isolate; background: url('/wallpapers/desktop-wide.jpg') center / cover no-repeat #172936; }
-.dock-anchor { position: fixed; z-index: 10000; top: 50%; left: 6px; width: 64px; transform: translateY(-50%); pointer-events: none; }
+.desktop { --dock-left: 6px; --dock-width: 64px; position: fixed; inset: 0; overflow: hidden; isolation: isolate; background: url('/wallpapers/desktop-wide.jpg') center / cover no-repeat #172936; }
+.dock-anchor { position: fixed; z-index: 10000; top: 50%; left: var(--dock-left); width: var(--dock-width); transform: translateY(-50%); pointer-events: none; }
 .dock { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 5px; width: 100%; border-radius: 18px; background: rgba(18, 18, 20, .9); pointer-events: auto; transition: transform 200ms ease-out, opacity 200ms ease-out; }
 .dock.is-obscured:not(.is-revealed):not(:has(:focus-visible)) { transform: translateX(calc(-100% - 8px)); opacity: 0; pointer-events: none; }
 .dock-edge { position: fixed; z-index: 9999; top: var(--shell-height); bottom: 0; left: 0; width: 12px; padding: 0; border: 0; background: transparent; cursor: pointer; }
@@ -99,12 +99,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
   --shortcut-height: 76px;
   --shortcut-gap: 10px;
   --shortcut-right: 24px;
+  --shortcut-left: calc(var(--dock-left) + var(--dock-width) + var(--shortcut-gap));
   --shortcut-top: 50px;
   position: absolute;
   inset: 0;
+  padding-left: var(--shortcut-left);
   pointer-events: none;
 }
-.desktop-shortcut, .desktop-trash {
+.desktop-shortcut {
   position: absolute;
   width: var(--shortcut-width);
   min-height: var(--shortcut-height);
@@ -112,6 +114,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  border: 0;
+  background: transparent;
   padding: 5px;
   color: white;
   border-radius: 6px;
@@ -120,10 +124,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
   pointer-events: auto;
   -webkit-user-select: none;
   user-select: none;
-}
-.desktop-shortcut {
   top: calc(var(--shortcut-top) + var(--shortcut-row, 0) * (var(--shortcut-height) + var(--shortcut-gap)));
-  right: calc(var(--shortcut-right) + var(--shortcut-column, 0) * (var(--shortcut-width) + var(--shortcut-gap)));
+  right: var(--shortcut-right);
+  left: var(--shortcut-x, auto);
   touch-action: none;
   cursor: grab;
 }
@@ -131,9 +134,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
 .desktop-shortcut:nth-of-type(3) { --shortcut-row: 2; }
 .desktop-shortcut:hover { background: #ffffff18; }
 .desktop-shortcut.is-dragging { background: #ffffff24; opacity: .55; cursor: grabbing; }
-.desktop-trash { left: 6px; top: var(--shortcut-top); width: 64px; transition: background-color 150ms ease; }
+.desktop-trash { left: var(--shortcut-x, var(--shortcut-left)); right: auto; transition: background-color 150ms ease; }
 .desktop-trash.is-drop-target { background-color: #ffffff36; }
-.desktop-shortcut img, .desktop-trash img, .desktop-drag-icon { width: 48px; height: 48px; object-fit: contain; }
+.desktop-shortcut img, .desktop-drag-icon { width: 48px; height: 48px; object-fit: contain; }
 .desktop-drag-icon, .desktop-drop-target { position: fixed; inset: 0 auto auto 0; pointer-events: none; }
 .desktop-drag-icon { z-index: 10012; filter: drop-shadow(0 3px 4px #0006); }
 .desktop-drop-target { z-index: 10011; width: 78px; height: 76px; border-radius: 6px; background: #ffffff18; }
@@ -452,7 +455,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
 @media (max-width: 760px) {
   :root { --shell-height: 32px; }
   .desktop-icons { display: none; }
-  .dock-anchor { left: 3px; width: 46px; }
+  .desktop { --dock-left: 3px; --dock-width: 46px; }
   .dock { gap: 2px; padding: 6px 3px; border-radius: 14px; }
   .dock-item { width: 40px; height: 40px; }
   .dock-app { width: 36px; height: 36px; }

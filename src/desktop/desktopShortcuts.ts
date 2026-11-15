@@ -6,10 +6,10 @@ const directions: Record<string, [number, number]> = {
 };
 
 export function initDesktopShortcuts(grid: HTMLElement, announce: (label: string, action: 'shortcutMoved' | 'shortcutTrashed') => void) {
-  const shortcuts = [...grid.querySelectorAll<HTMLAnchorElement>('.desktop-shortcut')];
+  const desktop = grid.parentElement!;
+  const shortcuts = [...grid.querySelectorAll<HTMLAnchorElement>('a.desktop-shortcut')];
   const trash = grid.querySelector<HTMLElement>('[data-desktop-trash]')!;
   const trashIcon = trash.querySelector('img')!;
-  const cells = new Map(shortcuts.map((shortcut, row) => [shortcut, { column: 0, row }]));
   const ghost = document.createElement('img');
   const drop = document.createElement('div');
   ghost.className = 'desktop-drag-icon';
@@ -24,33 +24,39 @@ export function initDesktopShortcuts(grid: HTMLElement, announce: (label: string
     const width = read('--shortcut-width');
     const height = read('--shortcut-height');
     const gap = read('--shortcut-gap');
-    const origin = { x: grid.clientWidth - width - read('--shortcut-right'), y: read('--shortcut-top') };
+    const left = parseFloat(css.paddingLeft);
     const step = { x: width + gap, y: height + gap };
-    return {
-      origin, step,
-      lastColumn: Math.max(0, Math.floor((origin.x - 74) / step.x)),
-      lastRow: Math.max(0, Math.floor((grid.clientHeight - origin.y - height) / step.y)),
-    };
+    const lastColumn = Math.max(0, Math.floor((desktop.clientWidth - left - width - read('--shortcut-right')) / step.x));
+    const origin = { x: left + lastColumn * step.x, y: read('--shortcut-top') };
+    return { origin, step, lastColumn, lastRow: Math.max(0, Math.floor((desktop.clientHeight - origin.y - height) / step.y)) };
   }
-  const occupied = (tile: HTMLAnchorElement, cell: Cell) =>
+  let frame = layout();
+  const cells = new Map<HTMLElement, Cell>([[trash, { column: frame.lastColumn, row: 0 }]]);
+  shortcuts.forEach((tile, row) => cells.set(tile, { column: 0, row }));
+  for (const [tile, cell] of cells) place(tile, cell);
+
+  function cellLeft(column: number) {
+    return frame.origin.x - column * frame.step.x;
+  }
+  const occupied = (tile: HTMLElement, cell: Cell) =>
     [...cells].some(([other, current]) => other !== tile && sameCell(current, cell));
-  function place(tile: HTMLAnchorElement, cell: Cell) {
+  function place(tile: HTMLElement, cell: Cell) {
     cells.set(tile, cell);
-    tile.style.setProperty('--shortcut-column', String(cell.column));
+    tile.style.setProperty('--shortcut-x', `${cellLeft(cell.column)}px`);
     tile.style.setProperty('--shortcut-row', String(cell.row));
   }
-  function bounded(cell: Cell, frame = layout()) {
+  function bounded(cell: Cell) {
     return {
       column: Math.max(0, Math.min(cell.column, frame.lastColumn)),
       row: Math.max(0, Math.min(cell.row, frame.lastRow)),
     };
   }
-  function commit(tile: HTMLAnchorElement, cell: Cell) {
+  function commit(tile: HTMLElement, cell: Cell) {
     if (occupied(tile, cell) || sameCell(cells.get(tile)!, cell)) return;
     place(tile, cell);
     announce(tile.textContent!.trim(), 'shortcutMoved');
   }
-  function discard(tile: HTMLAnchorElement) {
+  function discard(tile: HTMLElement) {
     cells.delete(tile);
     tile.hidden = true;
     trashIcon.src = '/adwaita/color/user-trash-full.svg';
@@ -61,9 +67,11 @@ export function initDesktopShortcuts(grid: HTMLElement, announce: (label: string
 
   window.addEventListener('resize', () => {
     if (!grid.clientWidth) return;
-    const frame = layout();
+    const previous = frame;
+    frame = layout();
     for (const [tile, old] of cells) {
-      const next = bounded(old, frame);
+      const column = old.column === previous.lastColumn ? frame.lastColumn : old.column;
+      const next = bounded({ column, row: old.row });
       if (!occupied(tile, next)) {
         place(tile, next);
         continue;
@@ -77,7 +85,8 @@ export function initDesktopShortcuts(grid: HTMLElement, announce: (label: string
     }
   });
 
-  for (const tile of shortcuts) {
+  for (const tile of cells.keys()) {
+    const canDiscard = tile !== trash;
     let drag: { startX: number; startY: number; offsetX: number; offsetY: number; iconX: number; iconY: number; cell: Cell } | null = null;
     let movedByPointer = false;
     const icon = tile.querySelector('img')!;
@@ -104,21 +113,20 @@ export function initDesktopShortcuts(grid: HTMLElement, announce: (label: string
         ghost.src = icon.src;
         ghost.hidden = false;
       }
-      const frame = layout();
       drag.cell = bounded({
         column: Math.round((frame.origin.x - (event.clientX - drag.offsetX)) / frame.step.x),
         row: Math.round((event.clientY - drag.offsetY - frame.origin.y) / frame.step.y),
-      }, frame);
+      });
       const { column, row } = drag.cell;
-      const trashHovered = overTrash(event);
+      const trashHovered = canDiscard && overTrash(event);
       trash.classList.toggle('is-drop-target', trashHovered);
       drop.hidden = trashHovered || occupied(tile, drag.cell);
-      drop.style.translate = `${frame.origin.x - column * frame.step.x}px ${frame.origin.y + row * frame.step.y}px`;
+      drop.style.translate = `${cellLeft(column)}px ${frame.origin.y + row * frame.step.y}px`;
       ghost.style.translate = `${event.clientX - drag.iconX}px ${event.clientY - drag.iconY}px`;
     });
     tile.addEventListener('pointerup', (event) => {
       if (!drag || !movedByPointer) return;
-      if (overTrash(event)) discard(tile);
+      if (canDiscard && overTrash(event)) discard(tile);
       else commit(tile, drag.cell);
     });
     tile.addEventListener('lostpointercapture', () => {
@@ -131,10 +139,10 @@ export function initDesktopShortcuts(grid: HTMLElement, announce: (label: string
       if (movedByPointer && event.detail > 0) event.preventDefault();
     });
     tile.addEventListener('keydown', (event) => {
-      if (event.key === 'Delete') {
+      if (canDiscard && event.key === 'Delete') {
         event.preventDefault();
         discard(tile);
-        ([...cells.keys()][0] ?? grid.parentElement)?.focus();
+        (shortcuts.find((shortcut) => cells.has(shortcut)) ?? trash).focus();
         return;
       }
       const direction = directions[event.key];
