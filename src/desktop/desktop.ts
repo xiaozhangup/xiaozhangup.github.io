@@ -1,4 +1,4 @@
-import { dismissDisclosure, initDisclosures } from './disclosures';
+import { dismissDisclosure, initDisclosures, openDisclosure } from './disclosures';
 import { messages, type Language } from './i18n';
 import { initCalendar } from './shellCalendar';
 import { initSpotify } from './spotify';
@@ -27,8 +27,10 @@ const announcer = document.querySelector<HTMLElement>('[data-announcer]')!;
 const activeTitle = document.querySelector<HTMLElement>('[data-active-title]')!;
 const postRows = Array.from(document.querySelectorAll<HTMLElement>('[data-post-row]'));
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-const readerDock = document.querySelector<HTMLButtonElement>('[data-restore-reader]')!;
-const libraryDock = document.querySelector<HTMLAnchorElement>('.dock [data-open-library]')!;
+const libraryDock = document.querySelector<HTMLAnchorElement>('[data-dock-app="library"]')!;
+const aboutDock = document.querySelector<HTMLAnchorElement>('[data-dock-app="about"]')!;
+const previewGroup = libraryDock.closest<HTMLElement>('[data-disclosure]')!;
+const previewCards = Array.from(previewGroup.querySelectorAll<HTMLButtonElement>('[data-preview-window]'));
 const sidebarToggle = document.querySelector<HTMLButtonElement>('[data-toggle-sidebar]')!;
 const sidebar = document.querySelector<HTMLElement>('.library-sidebar')!;
 const dock = document.querySelector<HTMLElement>('.dock')!;
@@ -40,6 +42,8 @@ let searchTimer: ReturnType<typeof setTimeout> | undefined;
 let pagefind: Promise<any> | undefined;
 let topZ = 30;
 const initialWindow = document.body.dataset.initialWindow as WindowName || 'library';
+const runningWindows = new Set<WindowName>(['library', initialWindow]);
+const articleWindows: WindowName[] = ['library', 'reader'];
 let activeWindow: WindowName = initialWindow;
 let currentFilter: FilterKind = document.body.dataset.initialFilter as FilterKind || 'all';
 let currentValue = document.body.dataset.filterValue || '';
@@ -82,6 +86,14 @@ function updateLibraryLabels() {
 
 function announce(message: string) { announcer.textContent = message; }
 const isVisible = (win: HTMLElement) => win.hasAttribute('data-visible');
+function syncDockApps() {
+  const count = articleWindows.filter((name) => runningWindows.has(name)).length;
+  libraryDock.dataset.windowCount = String(count);
+  libraryDock.classList.toggle('is-running', count > 0);
+  libraryDock.classList.toggle('is-active', isVisible(windows[activeWindow]) && articleWindows.includes(activeWindow));
+  aboutDock.classList.toggle('is-running', runningWindows.has('about'));
+  aboutDock.classList.toggle('is-active', activeWindow === 'about' && isVisible(windows.about));
+}
 function syncWindowAccess() {
   for (const [name, win] of Object.entries(windows)) {
     win.inert = !isVisible(win) || (mobileLayout.matches && name !== activeWindow);
@@ -91,16 +103,17 @@ function hideWindow(win: HTMLElement) {
   win.removeAttribute('data-visible');
   win.removeAttribute('data-active');
   win.inert = true;
-  if (win === windows.library) libraryDock.classList.remove('is-running');
+  syncDockApps();
 }
 function focusWindow(name: WindowName) {
   const win = windows[name];
   if (!win.hasAttribute('data-active') || !isVisible(win)) win.style.zIndex = String(++topZ);
   win.setAttribute('data-visible', '');
   activeWindow = name;
-  if (name === 'library') libraryDock.classList.add('is-running');
+  runningWindows.add(name);
   for (const [key, other] of Object.entries(windows)) other.toggleAttribute('data-active', key === name);
   syncWindowAccess();
+  syncDockApps();
   activeTitle.textContent = t(name === 'library' ? 'posts' : name === 'reader' ? 'reader' : 'aboutShort');
 }
 function pushUrl(url: string) {
@@ -212,7 +225,6 @@ async function openArticle(url: string, updateUrl = true) {
     readerContent.replaceChildren(article);
     applyArticleLanguage();
     windows.reader.dataset.articleUrl = new URL(url, location.href).pathname;
-    readerDock.hidden = false;
     readerContent.scrollTop = 0;
     if (updateUrl) pushUrl(new URL(url, location.href).pathname);
     focusWindow('reader');
@@ -236,10 +248,8 @@ function pathFilter(): { kind: FilterKind; value: string } | null {
   return null;
 }
 function closeWindow(name: WindowName) {
-  if (name === 'reader') {
-    articleRequest++;
-    readerDock.hidden = true;
-  }
+  if (name === 'reader') articleRequest++;
+  runningWindows.delete(name);
   hideWindow(windows[name]);
   if (name !== 'library') {
     focusWindow('library');
@@ -252,10 +262,11 @@ function closeWindow(name: WindowName) {
   if (!isVisible(windows[activeWindow])) libraryDock.focus();
 }
 
+function mostRecentWindow(names: WindowName[]) {
+  return names.sort((a, b) => Number(getComputedStyle(windows[b]).zIndex) - Number(getComputedStyle(windows[a]).zIndex))[0];
+}
 function focusNextWindow() {
-  const next = (Object.keys(windows) as WindowName[])
-    .filter((name) => isVisible(windows[name]))
-    .sort((a, b) => Number(getComputedStyle(windows[b]).zIndex) - Number(getComputedStyle(windows[a]).zIndex))[0];
+  const next = mostRecentWindow((Object.keys(windows) as WindowName[]).filter((name) => isVisible(windows[name])));
   if (next) focusWindow(next);
   else activeTitle.textContent = t('desktop');
 }
@@ -296,20 +307,57 @@ function centerWindow(win: HTMLElement) {
 function minimizeWindow(win: HTMLElement) {
   hideWindow(win);
   focusNextWindow();
-  const dockButton = win === windows.reader ? readerDock : win === windows.about
-    ? document.querySelector<HTMLElement>('.dock [data-open-about]')! : libraryDock;
-  dockButton.focus();
+  (win === windows.about ? aboutDock : libraryDock).focus();
+}
+
+function activateDockWindow(name: WindowName) {
+  focusWindow(name);
+  if (name === 'reader') {
+    pushUrl(windows.reader.dataset.articleUrl!);
+    syncReaderTitle();
+    visibleReaderHeading()?.focus({ preventScroll: true });
+  } else {
+    pushUrl(name === 'about' ? '/about/' : libraryUrl);
+    document.title = blogTitle(name === 'about' ? t('aboutShort') : heading.textContent!);
+    windows[name].querySelector<HTMLButtonElement>('[data-drag-handle]')!.focus({ preventScroll: true });
+  }
+}
+function openDockPreviews() {
+  const previewText = {
+    library: [t('library'), heading.textContent],
+    reader: [visibleReaderHeading()?.textContent || t('reader'), readerContent.querySelector('[data-article-language]:not([hidden]) .article-description')?.textContent],
+  } as const;
+  for (const card of previewCards) {
+    const [title, content] = previewText[card.dataset.previewWindow as 'library' | 'reader'];
+    card.querySelector('[data-preview-title]')!.textContent = title;
+    card.querySelector('[data-preview-content]')!.textContent = content || '';
+  }
+  openDisclosure(previewGroup);
+  previewCards.find((card) => card.dataset.previewWindow === activeWindow)!.focus({ preventScroll: true });
+}
+function activateDockApp(app: 'library' | 'about') {
+  if (previewGroup.hasAttribute('data-open') && app === 'library') {
+    dismissDisclosure(true);
+    return;
+  }
+  const names = (app === 'library' ? articleWindows : ['about'] as WindowName[]).filter((name) => runningWindows.has(name));
+  if (names.includes(activeWindow) && isVisible(windows[activeWindow])) {
+    if (names.length > 1) openDockPreviews();
+    else minimizeWindow(windows[activeWindow]);
+    return;
+  }
+  const visible = names.filter((name) => isVisible(windows[name]));
+  activateDockWindow(mostRecentWindow(visible.length ? visible : names) ?? app);
 }
 
 root.addEventListener('click', (event) => {
   const target = event.target as HTMLElement;
   const close = target.closest<HTMLAnchorElement>('[data-close-window]');
   if (close) { event.preventDefault(); closeWindow(close.dataset.closeWindow as WindowName); return; }
-  const restore = target.closest<HTMLElement>('[data-restore-reader]');
-  if (restore) {
-    focusWindow('reader');
-    if (windows.reader.dataset.articleUrl) pushUrl(windows.reader.dataset.articleUrl);
-    syncReaderTitle();
+  const preview = target.closest<HTMLButtonElement>('[data-preview-window]');
+  if (preview) {
+    dismissDisclosure();
+    activateDockWindow(preview.dataset.previewWindow as WindowName);
     return;
   }
   const toggleSidebar = target.closest<HTMLButtonElement>('[data-toggle-sidebar]');
@@ -352,6 +400,11 @@ root.addEventListener('click', (event) => {
   }
   const anchor = target.closest<HTMLAnchorElement>('a[href]');
   if (!anchor || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || anchor.target === '_blank' || anchor.hasAttribute('download')) return;
+  if (anchor.dataset.dockApp) {
+    event.preventDefault();
+    activateDockApp(anchor.dataset.dockApp as 'library' | 'about');
+    return;
+  }
   if (anchor.hasAttribute('data-open-article')) { event.preventDefault(); void openArticle(anchor.href); return; }
   if (anchor.hasAttribute('data-open-about')) { event.preventDefault(); pushUrl('/about/'); focusWindow('about'); document.title = blogTitle(t('aboutShort')); return; }
   if (anchor.hasAttribute('data-open-library')) { event.preventDefault(); setFilter('all', '', true, '/blog/'); return; }
@@ -501,10 +554,9 @@ function applyLanguage(next: Language) {
   document.querySelectorAll<HTMLButtonElement>('[data-set-language]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.setLanguage === language)));
   document.querySelectorAll<HTMLElement>('[data-post-title], [data-post-description]').forEach((el) => { el.textContent = el.dataset[language]!; });
   const dockLabels: [string, string][] = [
-    ['.dock [data-open-library]', 'openPosts'], ['.dock [data-restore-reader]', 'restoreReader'],
+    ['[data-dock-app="library"]', 'posts'], ['[data-dock-app="about"]', 'openAbout'],
     ['.dock [data-desktop-filter="categories"]', 'openCategories'], ['.dock [data-desktop-filter="tags"]', 'openTags'],
-    ['.dock [data-desktop-filter="search"]', 'searchAction'], ['.dock [data-open-about]', 'openAbout'],
-    ['.dock a[href="https://github.com/xiaozhangup"]', 'openGithub'], ['.dock a[href="/rss.xml"]', 'rss'],
+    ['.dock a[href="/rss.xml"]', 'rss'],
   ];
   for (const [selector, key] of dockLabels) {
     const item = document.querySelector<HTMLElement>(selector)!;

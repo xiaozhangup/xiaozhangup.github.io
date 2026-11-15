@@ -60,14 +60,23 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
       <button type="button" class="dock-edge" data-dock-edge aria-label="显示桌面应用" data-i18n-aria="showDock" aria-controls="desktop-dock" aria-expanded="false" hidden></button>
       <div class="dock-anchor" data-dock-anchor>
       <nav class="dock" id="desktop-dock" data-i18n-aria="desktopApps" aria-label="桌面应用">
-        <a class="dock-item is-running" href="/blog/" data-open-library data-tooltip="文章" aria-label="打开文章"><img class="dock-app" src="/adwaita/color/gnome-files.svg" alt="" /><span class="dock-dot"></span></a>
-        <button type="button" class="dock-item dock-reader is-running" data-restore-reader data-tooltip="阅读器" aria-label="恢复阅读器窗口" hidden={initialWindow !== 'reader'}><img class="dock-app" src="/adwaita/color/text-x-generic.svg" alt="" /><span class="dock-dot"></span></button>
+        <div class="dock-app-group" data-disclosure data-align="side">
+          <a class="dock-item is-running" href="/blog/" data-dock-app="library" data-disclosure-trigger aria-controls="article-windows" aria-expanded="false" data-tooltip="文章" aria-label="文章"><img class="dock-app" src="/adwaita/color/gnome-files.svg" alt="" /><span class="dock-dot"></span></a>
+          <div class="disclosure-panel shell-popover dock-previews" id="article-windows" data-i18n-aria="openWindows" aria-label="已打开的文章窗口" role="group" inert>
+            <button type="button" class="dock-preview" data-preview-window="library">
+              <span class="dock-preview-title" data-preview-title></span>
+              <span class="dock-preview-view" aria-hidden="true"><img src="/adwaita/color/gnome-files.svg" alt="" /><span data-preview-content></span></span>
+            </button>
+            <button type="button" class="dock-preview" data-preview-window="reader">
+              <span class="dock-preview-title" data-preview-title></span>
+              <span class="dock-preview-view" aria-hidden="true"><img src="/adwaita/color/text-x-generic.svg" alt="" /><span data-preview-content></span></span>
+            </button>
+          </div>
+        </div>
         <a class="dock-item" href="/blog/categories/" data-desktop-filter="categories" data-tooltip="分类" aria-label="打开分类"><img class="dock-app" src="/adwaita/color/folder-projects.svg" alt="" /></a>
         <a class="dock-item" href="/blog/tags/" data-desktop-filter="tags" data-tooltip="标签" aria-label="打开标签"><img class="dock-app" src="/adwaita/color/user-bookmarks.svg" alt="" /></a>
-        <a class="dock-item" href="/blog/search/" data-desktop-filter="search" data-tooltip="搜索" aria-label="搜索文章"><span class="dock-symbol dock-symbol--search"><AdwIcon name="system-search" /></span></a>
         <div class="dock-separator"></div>
-        <a class="dock-item" href="/about/" data-open-about data-tooltip="关于" aria-label="关于博客"><img class="dock-app" src="/adwaita/color/avatar-default.svg" alt="" /></a>
-        <a class="dock-item" href="https://github.com/xiaozhangup" target="_blank" rel="noopener noreferrer" data-tooltip="GitHub" aria-label="打开 GitHub"><span class="dock-symbol dock-symbol--github"><Icon name="simple-icons:github" aria-hidden="true" /></span></a>
+        <a class:list={['dock-item', initialWindow === 'about' && 'is-running']} href="/about/" data-dock-app="about" data-tooltip="关于" aria-label="关于博客"><img class="dock-app" src="/adwaita/color/avatar-default.svg" alt="" /><span class="dock-dot"></span></a>
         <div class="dock-spacer"></div>
         <a class="dock-item" href="/rss.xml" data-tooltip="RSS 订阅" aria-label="RSS 订阅"><span class="dock-symbol dock-symbol--rss"><AdwIcon name="application-rss+xml" /></span></a>
       </nav>

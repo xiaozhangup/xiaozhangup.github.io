@@ -45,7 +45,7 @@
 
 .window-control::before,
 :is(.shell-trigger, .music-pill, .shell-list-row, .quick-action, .spotify-open, .calendar-nav button,
-    .dock-item, .desktop-shortcut, .toolbar-icon, .window-menu-popover button,
+    .dock-item, .dock-preview, .desktop-shortcut, .toolbar-icon, .window-menu-popover button,
     .side-link, .post-row, .folder-item, .about-links a, .article-meta a,
     .window-header, .reader-scroll, .window-location) {
   transition: background-color var(--control-duration) ease-out, color var(--control-duration) ease-out, border-color var(--control-duration) ease-out;
@@ -69,7 +69,7 @@
 
 @media (prefers-reduced-motion: no-preference) {
   html:not([data-motion='off']) :is(
-    .library-search, .folder-grid, .files-view, .post-row, .empty-list, .dock-reader,
+    .library-search, .folder-grid, .files-view, .post-row, .empty-list,
     .reader-scroll .article-document, [data-article-language], .music-playing, .clock-media-track
   ):not([hidden]) {
     animation: reveal-content 160ms var(--motion-ease) both;

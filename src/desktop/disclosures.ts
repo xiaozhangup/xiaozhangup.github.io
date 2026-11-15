@@ -1,7 +1,7 @@
 let opened: HTMLElement | null = null;
 
 function controls(owner: HTMLElement) {
-  const trigger = owner.querySelector<HTMLButtonElement>('[data-disclosure-trigger]')!;
+  const trigger = owner.querySelector<HTMLElement>('[data-disclosure-trigger]')!;
   const panel = document.getElementById(trigger.getAttribute('aria-controls')!)!;
   return { trigger, panel };
 }
@@ -11,6 +11,14 @@ function positionPanel(owner: HTMLElement) {
   if (!owner.dataset.align) return;
 
   const rect = trigger.getBoundingClientRect();
+  if (owner.dataset.align === 'side') {
+    const topbar = document.querySelector<HTMLElement>('.topbar')!.offsetHeight;
+    const desired = rect.top + (rect.height - panel.offsetHeight) / 2;
+    const top = Math.max(topbar + 6, Math.min(desired, document.documentElement.clientHeight - panel.offsetHeight - 6));
+    panel.style.top = `${top - rect.top}px`;
+    panel.style.transformOrigin = `left ${rect.top + rect.height / 2 - top}px`;
+    return;
+  }
   const width = panel.offsetWidth;
   const center = rect.left + rect.width / 2;
   const anchor = owner.dataset.align === 'center' ? center - width / 2
@@ -34,7 +42,7 @@ export function dismissDisclosure(restoreFocus = false) {
   return true;
 }
 
-function openDisclosure(owner: HTMLElement) {
+export function openDisclosure(owner: HTMLElement) {
   dismissDisclosure();
   const { trigger, panel } = controls(owner);
   positionPanel(owner);
@@ -47,7 +55,7 @@ function openDisclosure(owner: HTMLElement) {
 
 export function initDisclosures() {
   document.addEventListener('click', (event) => {
-    const trigger = (event.target as Element).closest<HTMLButtonElement>('[data-disclosure-trigger]');
+    const trigger = (event.target as Element).closest<HTMLButtonElement>('button[data-disclosure-trigger]');
     if (trigger) {
       const owner = trigger.closest<HTMLElement>('[data-disclosure]')!;
       if (opened === owner) dismissDisclosure();
