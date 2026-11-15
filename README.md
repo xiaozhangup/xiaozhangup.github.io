@@ -55,3 +55,7 @@ draft: false
 ## 主题来源
 
 Frosti 4.1.0，上游提交 `e8ebaa9a1a04784686ca403e882a95e04f9b8bf6`。保留上游 MIT 许可证及页脚署名，清理了演示文章、演示项目和作者个人资料，并配置中文界面。
+
+## Spotify 播放状态
+
+侧栏卡片从 Cloudflare Worker 获取当前播放状态。Worker 源码位于 `workers/spotify/`，生产地址由工作流中的 `PUBLIC_SPOTIFY_ENDPOINT` 配置。Spotify Client Secret 和 Refresh Token 保存在 Worker 的加密密钥中。Spotify 刷新令牌到期后需要重新授权并更新 Worker 密钥。

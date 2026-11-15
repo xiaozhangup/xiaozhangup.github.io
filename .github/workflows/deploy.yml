@@ -20,6 +20,8 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Install, check, build, index search, and upload site
         uses: withastro/action@a8b97df764791eb61fbf3338ef713b0e61ae05c5 # v6
+        env:
+          PUBLIC_SPOTIFY_ENDPOINT: https://blog-spotify-status.xiaozhangup.workers.dev/now-playing
         with:
           node-version: 24
 

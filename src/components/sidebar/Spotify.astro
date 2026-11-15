@@ -1,0 +1,53 @@
+---
+const endpoint = import.meta.env.PUBLIC_SPOTIFY_ENDPOINT;
+---
+{endpoint && <section class="bg-base-100 rounded-xl shadow-lg p-4 mb-4" data-spotify-endpoint={endpoint}>
+  <div class="flex items-center justify-between gap-2 mb-3">
+    <span class="font-bold text-sm">Spotify</span>
+    <span class="text-xs text-base-content/60" data-status>正在加载</span>
+  </div>
+  <div class="items-center gap-3 hidden" data-track>
+    <img data-cover alt="" width="52" height="52" class="rounded-md w-[52px] h-[52px] object-cover" />
+    <div class="min-w-0">
+      <a data-title class="block font-semibold text-sm truncate hover:text-primary" target="_blank" rel="noopener noreferrer"></a>
+      <p data-artist class="text-xs text-base-content/60 truncate"></p>
+    </div>
+  </div>
+</section>}
+<script>
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let controller: AbortController | undefined;
+  async function refresh() {
+    const card = document.querySelector<HTMLElement>('[data-spotify-endpoint]');
+    if (!card) return;
+    const status = card.querySelector<HTMLElement>('[data-status]')!;
+    const track = card.querySelector<HTMLElement>('[data-track]')!;
+    controller = new AbortController();
+    try {
+      const response = await fetch(card.dataset.spotifyEndpoint!, { signal: controller.signal });
+      if (!response.ok) throw new Error('Spotify unavailable');
+      const data = await response.json();
+      if (!card.isConnected) return;
+      track.classList.toggle('hidden', !data.playing);
+      track.classList.toggle('flex', data.playing);
+      status.textContent = data.playing ? '正在播放' : '当前未播放';
+      if (data.playing) {
+        const title = card.querySelector<HTMLAnchorElement>('[data-title]')!;
+        title.textContent = data.title;
+        title.href = data.url;
+        card.querySelector<HTMLElement>('[data-artist]')!.textContent = data.artist;
+        const cover = card.querySelector<HTMLImageElement>('[data-cover]')!;
+        cover.hidden = !data.cover;
+        if (data.cover) cover.src = data.cover;
+      }
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      track.classList.add('hidden');
+      track.classList.remove('flex');
+      status.textContent = '暂时无法获取状态';
+    }
+    timer = setTimeout(refresh, 30000);
+  }
+  document.addEventListener('astro:page-load', () => { clearTimeout(timer); controller?.abort(); refresh(); });
+  document.addEventListener('astro:before-swap', () => { clearTimeout(timer); controller?.abort(); });
+</script>

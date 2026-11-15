@@ -1,0 +1,7 @@
+{
+  "name": "blog-spotify-status",
+  "main": "index.js",
+  "compatibility_date": "2026-11-15",
+  "workers_dev": true,
+  "vars": { "SPOTIFY_CLIENT_ID": "eced49792e7f4577836f0f916115e225" }
+}
