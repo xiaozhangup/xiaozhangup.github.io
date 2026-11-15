@@ -245,7 +245,17 @@
     box-shadow: 0 1px 2px var(--card-shade-color);
     transition: background-color var(--control-duration);
   }
-  .quick-music .music-playing { gap: 4px; }
+  .quick-music .music-playing { gap: 7px; }
+  .music-listening {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-inline-end: 18px;
+    color: var(--music-muted);
+    font-size: .8rem;
+    font-weight: 700;
+  }
+  .music-listening svg { width: 14px; height: 14px; flex: none; }
   .quick-music .music-main { gap: 10px; }
   .quick-music .music-cover { width: 40px; border-radius: 7px; }
   .quick-music .music-track { gap: 2px; text-align: start; }
@@ -255,26 +265,20 @@
     white-space: nowrap;
   }
   .quick-music .music-track strong { font-size: .95rem; }
-  .quick-music .music-footer { gap: 8px; }
-  .quick-music .music-footer:has(> :not([hidden])) { min-height: 22px; }
-  .quick-music .spotify-open {
-    position: relative;
-    isolation: isolate;
-    width: var(--app-control-size);
-    height: var(--app-control-size);
-    background: transparent;
-  }
-  .quick-music .spotify-open::before {
-    content: '';
+  .quick-music .music-footer:has(> :not([hidden])) { min-height: 18px; }
+  .quick-music-link {
     position: absolute;
-    z-index: -1;
-    inset: 6px;
-    border-radius: 50%;
-    background: var(--music-border);
+    inset: 0;
+    display: grid;
+    justify-items: end;
+    align-items: start;
+    padding: 8px 10px;
+    border-radius: inherit;
+    color: var(--music-muted);
+    transition: background-color var(--control-duration);
   }
-  .quick-music .spotify-open:is(:hover, :focus-visible)::before {
-    background: color-mix(in srgb, var(--music-muted) 40%, transparent);
-  }
+  .quick-music-link:hover { background: color-mix(in srgb, var(--music-fg) 6%, transparent); }
+  .quick-music-link:focus-visible { outline-offset: -3px; }
   .quick-group { display: block; }
   .quick-group h2 {
     display: block;

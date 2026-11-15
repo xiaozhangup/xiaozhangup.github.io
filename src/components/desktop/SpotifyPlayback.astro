@@ -11,6 +11,12 @@ const coverSize = compact ? 40 : 84;
   <span data-spotify-status>Spotify</span>
 </div>
 <div class="music-playing" data-spotify-playing hidden>
+  {compact && (
+    <header class="music-listening">
+      <Icon name="simple-icons:spotify" aria-hidden="true" />
+      <span data-i18n="listeningNow">我正在听</span>
+    </header>
+  )}
   <div class="music-main">
     <div class="music-cover"><Icon name="simple-icons:spotify" aria-hidden="true" /><img data-spotify-cover alt="" width={coverSize} height={coverSize} /></div>
     <div class="music-track">
@@ -25,6 +31,8 @@ const coverSize = compact ? 40 : 84;
       <div class="music-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="播放进度" data-i18n-aria="playbackProgress" data-spotify-progress><i></i></div>
       <span class="music-time" data-spotify-duration>0:00</span>
     </div>
-    <a class="spotify-open" data-spotify-link target="_blank" rel="noopener noreferrer" title="在 Spotify 打开" aria-label="在 Spotify 打开" data-i18n-aria="openSpotify" hidden><Icon name="simple-icons:spotify" aria-hidden="true" /></a>
+    {!compact && (
+      <a class="spotify-open" data-spotify-link target="_blank" rel="noopener noreferrer" title="在 Spotify 打开" aria-label="在 Spotify 打开" data-i18n-aria="openSpotify" hidden><Icon name="simple-icons:spotify" aria-hidden="true" /></a>
+    )}
   </div>
 </div>

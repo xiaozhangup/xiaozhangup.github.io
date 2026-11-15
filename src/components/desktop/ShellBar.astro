@@ -139,6 +139,9 @@ const email = 'xiaozhangshiw@163.com';
           {endpoint && (
             <article class="mobile-only quick-music" aria-label="Spotify 播放状态" data-i18n-aria="spotifyStatus">
               <SpotifyPlayback compact />
+              <a class="quick-music-link" data-spotify-link target="_blank" rel="noopener noreferrer" aria-label="在 Spotify 打开" data-i18n-aria="openSpotify" hidden>
+                <AdwIcon name="go-next" />
+              </a>
             </article>
           )}
         </div>
