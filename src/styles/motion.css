@@ -1,0 +1,103 @@
+:root {
+  --control-duration: 145ms;
+  --motion-ease: cubic-bezier(.2, .65, .3, 1);
+}
+
+.disclosure-panel {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  translate: 0 var(--panel-shift, -4px);
+  scale: var(--panel-scale, .98);
+  transition:
+    opacity var(--panel-exit, 145ms) ease-out,
+    translate var(--panel-exit, 145ms) var(--motion-ease),
+    scale var(--panel-exit, 145ms) var(--motion-ease),
+    visibility 0s var(--panel-exit, 145ms);
+}
+[data-disclosure][data-open] > .disclosure-panel {
+  visibility: visible;
+  opacity: 1;
+  translate: none;
+  scale: none;
+  pointer-events: auto;
+  transition:
+    opacity var(--panel-enter, 165ms) ease-out,
+    translate var(--panel-enter, 165ms) var(--panel-ease, var(--motion-ease)),
+    scale var(--panel-enter, 165ms) var(--panel-ease, var(--motion-ease)),
+    visibility 0s;
+}
+
+.window {
+  translate: 0 7px;
+  scale: .983;
+  transition:
+    opacity 150ms ease-out, translate 165ms var(--motion-ease), scale 165ms var(--motion-ease),
+    visibility 0s 165ms, color var(--control-duration), background-color var(--control-duration), box-shadow 200ms ease-out;
+}
+.window[data-visible] {
+  translate: none;
+  scale: none;
+  transition:
+    opacity 175ms ease-out, translate 190ms var(--motion-ease), scale 190ms var(--motion-ease),
+    visibility 0s, color var(--control-duration), background-color var(--control-duration), box-shadow 200ms ease-out;
+}
+
+.window-control::before,
+:is(.shell-trigger, .music-pill, .shell-list-row, .quick-action, .spotify-open, .calendar-nav button,
+    .dock-item, .desktop-shortcut, .toolbar-icon, .window-menu-popover button,
+    .side-link, .post-row, .folder-item, .about-links a, .article-meta a, .search-box,
+    .window-header, .reader-scroll, .window-location) {
+  transition: background-color var(--control-duration) ease-out, color var(--control-duration) ease-out, border-color var(--control-duration) ease-out;
+}
+
+.library-layout { transition: grid-template-columns 180ms var(--motion-ease); }
+.window--library .window-header-leading {
+  transition: flex-basis 180ms var(--motion-ease), background-color var(--control-duration);
+}
+.window-name, .dock-item::after, [data-spotify-cover] { transition: opacity var(--control-duration) ease-out; }
+.library-sidebar { transition: opacity 165ms ease-out, background-color var(--control-duration); }
+@container desktop-window (width < 588px) {
+  .window--library .library-sidebar {
+    translate: -12px;
+    transition: opacity 165ms ease-out, translate 165ms var(--motion-ease), visibility 0s 165ms;
+  }
+  .window--library.sidebar-open .library-sidebar { translate: none; transition-delay: 0s; }
+}
+.skip-link { transition: transform 120ms var(--motion-ease); }
+.music-progress i { transition: transform 500ms linear; }
+
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-motion='off']) :is(
+    .library-search, .folder-grid, .files-view, .post-row, .empty-list, .dock-reader,
+    .reader-scroll .article-document, [data-article-language], .music-playing, .clock-media-track
+  ):not([hidden]) {
+    animation: reveal-content 160ms var(--motion-ease) both;
+  }
+}
+@keyframes reveal-content {
+  from { opacity: 0; translate: 0 4px; }
+  to { opacity: 1; translate: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .disclosure-panel, [data-disclosure][data-open] > .disclosure-panel, .window, .window[data-visible],
+  .window--library .library-sidebar, .window--library.sidebar-open .library-sidebar {
+    scale: none;
+    translate: none;
+    transition: opacity 75ms ease-out, visibility 0s;
+  }
+  .library-layout, .window--library .window-header-leading, .dock, .skip-link, .music-progress i { transition: none; }
+}
+
+html[data-motion='off'] {
+  --control-duration: 0s;
+}
+html[data-motion='off'] :is(.disclosure-panel, .window, .library-layout, .window-header-leading, .dock, .music-progress i, .skip-link),
+html[data-motion='off'] [data-disclosure][data-open] > .disclosure-panel,
+html[data-motion='off'] .window--library .library-sidebar,
+html[data-motion='off'] .window--library.sidebar-open .library-sidebar {
+  scale: none;
+  translate: none;
+  transition: none;
+}

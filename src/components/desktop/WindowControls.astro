@@ -1,0 +1,26 @@
+---
+import AdwIcon from './AdwIcon.astro';
+
+interface Props { name: 'library' | 'reader' | 'about' }
+const { name } = Astro.props;
+const hasMaximize = name !== 'about';
+const exit = name === 'library' ? '/' : '/blog/';
+---
+<div class="window-menu" data-disclosure>
+  <button type="button" class="toolbar-icon" data-disclosure-trigger aria-controls={`${name}-actions`} aria-expanded="false" data-i18n-aria="windowMenu" aria-label="窗口菜单" title="窗口菜单">
+    <AdwIcon name="open-menu" />
+  </button>
+  <div class="disclosure-panel window-menu-popover" id={`${name}-actions`} inert>
+    <button type="button" data-center data-i18n="centerWindow">居中窗口</button>
+    <button type="button" data-resize-window data-i18n="resizeWindow">调整窗口大小</button>
+    {name === 'library' && <button type="button" class="window-menu-extra" data-focus-search data-i18n="searchAction">搜索文章</button>}
+    {name === 'reader' && <button type="button" class="window-menu-extra" data-copy-link data-i18n="copyLink">复制文章链接</button>}
+    <button type="button" class:list={[hasMaximize && 'window-menu-mobile']} data-minimize data-i18n="minimize">最小化</button>
+    {hasMaximize && <button type="button" class="window-menu-mobile" data-maximize aria-pressed="false" data-i18n="maximize">最大化或还原</button>}
+  </div>
+</div>
+{hasMaximize && <>
+  <button type="button" class="window-control" data-minimize aria-label="最小化" title="最小化"><AdwIcon name="window-minimize" /></button>
+  <button type="button" class="window-control" data-maximize aria-pressed="false" aria-label="最大化或还原" title="最大化或还原"><AdwIcon name="window-maximize" class="maximize-icon" /><AdwIcon name="window-restore" class="restore-icon" /></button>
+</>}
+<a class="window-control" href={exit} data-close-window={name} aria-label="关闭" title="关闭"><AdwIcon name="window-close" /></a>

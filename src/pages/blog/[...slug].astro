@@ -21,14 +21,12 @@ const date = new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'long', 
 <DesktopShell title={post.data.title} description={post.data.description} initialWindow="reader" article={post}>
   <article slot="article" class="article-document" data-article-fragment data-pagefind-body>
     <div data-article-language="zh" lang="zh-CN">
-      <span class="article-kicker">XIAOZHANGUP / BLOG</span>
       <h1 tabindex="-1">{post.data.title}</h1>
       <p class="article-description">{post.data.description}</p>
       <div class="article-meta"><time datetime={post.data.pubDate.toISOString()}>{date}</time>{(post.data.categories ?? []).map(category => <a href={`/blog/category/${encodeURIComponent(category)}/`} data-desktop-filter="category" data-value={category}>{category}</a>)}{(post.data.tags ?? []).map(tag => <a href={`/blog/tag/${encodeURIComponent(tag)}/`} data-desktop-filter="tag" data-value={tag}>#{tag}</a>)}</div>
       <div class="article-body"><Content /></div>
     </div>
     {translation && TranslatedContent && <div data-article-language="en" lang="en" hidden>
-      <span class="article-kicker">XIAOZHANGUP / BLOG</span>
       <h1 tabindex="-1">{translation.data.title}</h1>
       <p class="article-description">{translation.data.description}</p>
       <div class="article-meta"><time datetime={post.data.pubDate.toISOString()}>{date}</time>{(post.data.categories ?? []).map(category => <a href={`/blog/category/${encodeURIComponent(category)}/`} data-desktop-filter="category" data-value={category}>{category}</a>)}{(post.data.tags ?? []).map(tag => <a href={`/blog/tag/${encodeURIComponent(tag)}/`} data-desktop-filter="tag" data-value={tag}>#{tag}</a>)}</div>

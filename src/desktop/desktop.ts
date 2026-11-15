@@ -1,4 +1,8 @@
+import { dismissDisclosure, initDisclosures } from './disclosures';
 import { messages, type Language } from './i18n';
+import { initCalendar } from './shellCalendar';
+import { initSpotify } from './spotify';
+import { animateWindowChange, beginKeyboardResize, bindWindowGeometry, fitWindow, windowBox } from './windowGeometry';
 
 type FilterKind = 'all' | 'categories' | 'tags' | 'archives' | 'search' | 'category' | 'tag';
 type WindowName = 'library' | 'reader' | 'about';
@@ -8,11 +12,12 @@ const windows = Object.fromEntries(
   Array.from(document.querySelectorAll<HTMLElement>('[data-window]')).map((item) => [item.dataset.window!, item]),
 ) as Record<WindowName, HTMLElement>;
 const readerContent = document.querySelector<HTMLElement>('[data-reader-content]')!;
+const searchForm = document.querySelector<HTMLFormElement>('[data-search-form]')!;
+const searchButton = document.querySelector<HTMLButtonElement>('[data-focus-search]')!;
 const searchInput = document.querySelector<HTMLInputElement>('[data-search]')!;
 const heading = document.querySelector<HTMLElement>('[data-library-heading]')!;
 const breadcrumb = document.querySelector<HTMLElement>('[data-breadcrumb]')!;
-const summary = document.querySelector<HTMLElement>('[data-list-summary]')!;
-const listLabel = document.querySelector<HTMLElement>('[data-list-label]')!;
+const filesView = document.querySelector<HTMLElement>('[data-files-view]')!;
 const statusCount = document.querySelector<HTMLElement>('[data-status-count]')!;
 const emptyList = document.querySelector<HTMLElement>('[data-empty-list]')!;
 const categoryChips = document.querySelector<HTMLElement>('[data-category-chips]')!;
@@ -22,7 +27,9 @@ const activeTitle = document.querySelector<HTMLElement>('[data-active-title]')!;
 const postRows = Array.from(document.querySelectorAll<HTMLElement>('[data-post-row]'));
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const readerDock = document.querySelector<HTMLButtonElement>('[data-restore-reader]')!;
+const libraryDock = document.querySelector<HTMLAnchorElement>('.dock [data-open-library]')!;
 const sidebarToggle = document.querySelector<HTMLButtonElement>('[data-toggle-sidebar]')!;
+const sidebar = document.querySelector<HTMLElement>('.library-sidebar')!;
 const dock = document.querySelector<HTMLElement>('.dock')!;
 const dockAnchor = document.querySelector<HTMLElement>('[data-dock-anchor]')!;
 const dockEdge = document.querySelector<HTMLButtonElement>('[data-dock-edge]')!;
@@ -35,6 +42,7 @@ const initialWindow = document.body.dataset.initialWindow as WindowName || 'libr
 let activeWindow: WindowName = initialWindow;
 let currentFilter: FilterKind = document.body.dataset.initialFilter as FilterKind || 'all';
 let currentValue = document.body.dataset.filterValue || '';
+let libraryUrl = initialWindow === 'library' ? location.pathname + location.search : '/blog/';
 let articleRequest = 0;
 let language: Language = 'zh';
 try { if (localStorage.getItem('desktop-language') === 'en') language = 'en'; } catch { /* Use Chinese when storage is unavailable. */ }
@@ -69,35 +77,53 @@ function updateLibraryLabels() {
   const titles: Record<FilterKind, string> = { all: t('allPosts'), categories: t('categories'), tags: t('tags'), archives: t('archives'), search: t('search'), category: currentValue, tag: currentValue };
   heading.textContent = titles[currentFilter];
   breadcrumb.textContent = titles[currentFilter];
-  listLabel.textContent = currentFilter === 'archives' ? t('byDate') : t('recentPosts');
 }
-
 
 function announce(message: string) { announcer.textContent = message; }
-function focusWindow(name: WindowName) {
-  const win = windows[name];
-  win.hidden = false;
-  win.style.zIndex = String(++topZ);
-  activeWindow = name;
-  activeTitle.textContent = t(name === 'library' ? 'posts' : name === 'reader' ? 'reader' : 'aboutShort');
-  if (window.innerWidth <= 760) {
-    for (const [key, other] of Object.entries(windows)) other.inert = key !== name;
-  } else {
-    for (const other of Object.values(windows)) other.inert = false;
+const isVisible = (win: HTMLElement) => win.hasAttribute('data-visible');
+function syncWindowAccess() {
+  for (const [name, win] of Object.entries(windows)) {
+    win.inert = !isVisible(win) || (mobileLayout.matches && name !== activeWindow);
   }
 }
-function showLibrary() { focusWindow('library'); }
+function hideWindow(win: HTMLElement) {
+  win.removeAttribute('data-visible');
+  win.removeAttribute('data-active');
+  win.inert = true;
+  if (win === windows.library) libraryDock.classList.remove('is-running');
+}
+function focusWindow(name: WindowName) {
+  const win = windows[name];
+  if (!win.hasAttribute('data-active') || !isVisible(win)) win.style.zIndex = String(++topZ);
+  win.setAttribute('data-visible', '');
+  activeWindow = name;
+  if (name === 'library') libraryDock.classList.add('is-running');
+  for (const [key, other] of Object.entries(windows)) other.toggleAttribute('data-active', key === name);
+  syncWindowAccess();
+  activeTitle.textContent = t(name === 'library' ? 'posts' : name === 'reader' ? 'reader' : 'aboutShort');
+}
 function pushUrl(url: string) {
   if (location.pathname + location.search !== url) history.pushState({}, '', url);
+}
+function setSearchVisible(open: boolean) {
+  searchForm.hidden = !open;
+  searchButton.setAttribute('aria-expanded', String(open));
+}
+function showSearch() {
+  focusWindow('library');
+  setSearchVisible(true);
+  searchInput.focus();
 }
 function setFilter(kind: FilterKind, value = '', updateUrl = false, url = '/blog/') {
   currentFilter = kind;
   currentValue = value;
-  if (updateUrl) pushUrl(url);
+  if (updateUrl) {
+    libraryUrl = url;
+    pushUrl(url);
+  }
   updateLibraryLabels();
   document.title = blogTitle(heading.textContent!);
-  categoryChips.hidden = kind !== 'categories';
-  tagChips.hidden = kind !== 'tags';
+  setSearchVisible(kind === 'search');
   if (kind !== 'search') searchInput.value = '';
   else searchInput.value = new URLSearchParams(location.search).get('q') || value;
   document.querySelectorAll<HTMLElement>('[data-desktop-filter]').forEach((link) => {
@@ -109,13 +135,17 @@ function setFilter(kind: FilterKind, value = '', updateUrl = false, url = '/blog
     if (selected) link.setAttribute('aria-current', 'page'); else link.removeAttribute('aria-current');
   });
   filterPosts();
-  showLibrary();
+  focusWindow('library');
   if (updateUrl && kind !== 'search') heading.focus();
 }
 function filterPosts() {
   const query = searchInput.value.trim().toLocaleLowerCase();
   const version = ++searchVersion;
   clearTimeout(searchTimer);
+  categoryChips.hidden = Boolean(query) || currentFilter !== 'categories';
+  tagChips.hidden = Boolean(query) || currentFilter !== 'tags';
+  filesView.hidden = !categoryChips.hidden || !tagChips.hidden;
+  statusCount.hidden = filesView.hidden;
   function renderMatches(contentPaths: Set<string> = new Set()) {
     let count = 0;
     for (const row of postRows) {
@@ -130,8 +160,7 @@ function filterPosts() {
       if (visible) count++;
     }
     emptyList.hidden = count > 0;
-    summary.textContent = query ? `${t('found')} ${postCount(count)}` : postCount(count);
-    statusCount.textContent = postCount(count);
+    statusCount.textContent = query ? `${t('found')} ${postCount(count)}` : postCount(count);
   }
   renderMatches();
   if (!query) return;
@@ -148,7 +177,7 @@ function filterPosts() {
 }
 function syncReaderTitle() {
   const name = visibleReaderHeading()?.textContent?.trim() || t('posts');
-  document.querySelectorAll<HTMLElement>('[data-reader-title], [data-reader-toolbar-title]').forEach((el) => { el.textContent = name; });
+  windows.reader.querySelector<HTMLElement>('[data-reader-title]')!.textContent = name;
   document.title = blogTitle(name);
 }
 async function openArticle(url: string, updateUrl = true) {
@@ -176,7 +205,7 @@ async function openArticle(url: string, updateUrl = true) {
     syncReaderTitle();
     visibleReaderHeading()?.focus();
   } catch {
-    location.href = url;
+    if (serial === articleRequest) location.href = url;
   }
 }
 function pathFilter(): { kind: FilterKind; value: string } | null {
@@ -193,18 +222,69 @@ function pathFilter(): { kind: FilterKind; value: string } | null {
   return null;
 }
 function closeWindow(name: WindowName) {
-  articleRequest++;
-  windows[name].hidden = true;
-  if (name === 'reader') readerDock.hidden = true;
-  if (name === 'reader' || name === 'about') {
-    showLibrary();
-    setFilter('all', '', true);
-  } else {
-    activeTitle.textContent = t('desktop');
-    const visible = (['reader', 'about'] as WindowName[]).find((other) => !windows[other].hidden);
-    if (visible) focusWindow(visible);
-    else document.querySelector<HTMLElement>('[data-open-library]')?.focus();
+  if (name === 'reader') {
+    articleRequest++;
+    readerDock.hidden = true;
   }
+  hideWindow(windows[name]);
+  if (name !== 'library') {
+    focusWindow('library');
+    pushUrl(libraryUrl);
+    document.title = blogTitle(heading.textContent!);
+    heading.focus();
+    return;
+  }
+  focusNextWindow();
+  if (!isVisible(windows[activeWindow])) libraryDock.focus();
+}
+
+function focusNextWindow() {
+  const next = (Object.keys(windows) as WindowName[])
+    .filter((name) => isVisible(windows[name]))
+    .sort((a, b) => Number(getComputedStyle(windows[b]).zIndex) - Number(getComputedStyle(windows[a]).zIndex))[0];
+  if (next) focusWindow(next);
+  else activeTitle.textContent = t('desktop');
+}
+function syncSidebar() {
+  const library = windows.library;
+  const compact = library.classList.contains('is-compact');
+  const open = compact ? library.classList.contains('sidebar-open') : !library.classList.contains('sidebar-hidden');
+  sidebar.inert = !open;
+  sidebarToggle.setAttribute('aria-expanded', String(open));
+}
+function updateSidebarMode() {
+  const library = windows.library;
+  const compact = library.clientWidth < 588;
+  if (compact !== library.classList.contains('is-compact')) {
+    library.classList.toggle('is-compact', compact);
+    library.classList.remove('sidebar-open');
+  }
+  syncSidebar();
+}
+function setMaximized(win: HTMLElement, maximized: boolean) {
+  win.classList.toggle('is-maximized', maximized);
+  win.querySelectorAll('[data-maximize]').forEach((button) => button.setAttribute('aria-pressed', String(maximized)));
+  if (!maximized) fitWindow(win);
+}
+function toggleMaximize(win: HTMLElement) {
+  animateWindowChange(win, () => setMaximized(win, !win.classList.contains('is-maximized')));
+}
+function centerWindow(win: HTMLElement) {
+  animateWindowChange(win, () => {
+    setMaximized(win, false);
+    const top = document.querySelector<HTMLElement>('.topbar')!.offsetHeight;
+    const { clientWidth, clientHeight } = document.documentElement;
+    win.style.left = `${Math.max(0, (clientWidth - win.offsetWidth) / 2)}px`;
+    win.style.top = `${Math.max(top, (clientHeight + top - win.offsetHeight) / 2)}px`;
+  });
+  announce(t('windowCentered'));
+}
+function minimizeWindow(win: HTMLElement) {
+  hideWindow(win);
+  focusNextWindow();
+  const dockButton = win === windows.reader ? readerDock : win === windows.about
+    ? document.querySelector<HTMLElement>('.dock [data-open-about]')! : libraryDock;
+  dockButton.focus();
 }
 
 root.addEventListener('click', (event) => {
@@ -220,44 +300,45 @@ root.addEventListener('click', (event) => {
   }
   const toggleSidebar = target.closest<HTMLButtonElement>('[data-toggle-sidebar]');
   if (toggleSidebar) {
-    const name = mobileLayout.matches ? 'sidebar-open' : 'sidebar-hidden';
-    const toggled = windows.library.classList.toggle(name);
-    toggleSidebar.setAttribute('aria-expanded', String(mobileLayout.matches ? toggled : !toggled));
+    const name = windows.library.classList.contains('is-compact') ? 'sidebar-open' : 'sidebar-hidden';
+    windows.library.classList.toggle(name);
+    syncSidebar();
     return;
   }
-  const control = target.closest<HTMLElement>('[data-minimize], [data-maximize], [data-center]');
+  const control = target.closest<HTMLElement>('[data-minimize], [data-maximize], [data-center], [data-resize-window]');
   if (control) {
     const win = control.closest<HTMLElement>('[data-window]')!;
-    if (control.hasAttribute('data-minimize')) {
-      win.hidden = true;
-      const name = win.dataset.window as WindowName;
-      if (name === 'reader') { readerDock.focus(); if (!windows.library.hidden) focusWindow('library'); }
-      else {
-        const next = (['reader', 'library', 'about'] as WindowName[]).find((item) => item !== name && !windows[item].hidden);
-        if (next) focusWindow(next);
-        document.querySelector<HTMLElement>('[data-open-library]')?.focus();
-      }
-    }
-    if (control.hasAttribute('data-maximize')) {
-      win.classList.toggle('is-maximized');
-      win.querySelectorAll('[data-maximize]').forEach((button) => button.setAttribute('aria-pressed', String(win.classList.contains('is-maximized'))));
-    }
-    if (control.hasAttribute('data-center')) {
-      win.classList.remove('is-maximized');
-      win.querySelectorAll('[data-maximize]').forEach((button) => button.setAttribute('aria-pressed', 'false'));
-      win.style.left = ''; win.style.top = ''; announce(t('windowCentered'));
-    }
-    const menu = control.closest<HTMLDetailsElement>('details');
-    if (menu) {
-      menu.open = false;
-      if (!win.hidden) menu.querySelector<HTMLElement>('summary')!.focus();
+    const minimize = control.hasAttribute('data-minimize');
+    const keyboardResize = control.hasAttribute('data-resize-window');
+    if (control.closest('.window-menu-popover')) dismissDisclosure(!minimize && !keyboardResize);
+    if (minimize) minimizeWindow(win);
+    else if (keyboardResize) {
+      beginKeyboardResize(win);
+      announce(t('resizeHint'));
+    } else if (control.hasAttribute('data-maximize')) {
+      toggleMaximize(win);
+    } else {
+      centerWindow(win);
     }
     return;
   }
   const search = target.closest<HTMLElement>('[data-focus-search]');
-  if (search) { searchInput.focus(); return; }
+  if (search) {
+    const fromMenu = search.classList.contains('window-menu-extra');
+    if (fromMenu) dismissDisclosure();
+    if (searchForm.hidden || fromMenu) showSearch();
+    else if (currentFilter === 'search') setFilter('all', '', true);
+    else {
+      searchInput.value = '';
+      setSearchVisible(false);
+      filterPosts();
+      searchButton.focus();
+    }
+    return;
+  }
   const copy = target.closest<HTMLElement>('[data-copy-link]');
   if (copy) {
+    if (copy.classList.contains('window-menu-extra')) dismissDisclosure(true);
     navigator.clipboard.writeText(new URL(windows.reader.dataset.articleUrl || location.pathname, location.origin).href).then(() => { announce(t('linkCopied')); copy.setAttribute('title', t('linkCopied')); }).catch(() => { announce(t('copyFailed')); });
     return;
   }
@@ -268,74 +349,52 @@ root.addEventListener('click', (event) => {
   if (anchor.hasAttribute('data-open-library')) { event.preventDefault(); setFilter('all', '', true, '/blog/'); return; }
   if (anchor.dataset.desktopFilter) {
     event.preventDefault();
-    if (mobileLayout.matches) { windows.library.classList.remove('sidebar-open'); sidebarToggle.setAttribute('aria-expanded', 'false'); }
+    windows.library.classList.remove('sidebar-open');
+    syncSidebar();
     setFilter(anchor.dataset.desktopFilter as FilterKind, anchor.dataset.value || '', true, anchor.pathname);
     if (anchor.dataset.desktopFilter === 'search') searchInput.focus();
   }
 });
-for (const win of Object.values(windows)) win.addEventListener('pointerdown', () => focusWindow(win.dataset.window as WindowName));
+for (const [name, win] of Object.entries(windows)) {
+  win.addEventListener('pointerdown', () => focusWindow(name as WindowName));
+  win.addEventListener('focusin', () => focusWindow(name as WindowName));
+  bindWindowGeometry(win, () => toggleMaximize(win), (resized) => announce(t(resized ? 'windowResized' : 'windowMoved')));
+}
+new ResizeObserver(updateSidebarMode).observe(windows.library);
+updateSidebarMode();
+initDisclosures();
 searchInput.addEventListener('input', filterPosts);
-document.querySelector<HTMLFormElement>('[data-search-form]')!.addEventListener('submit', (event) => {
+searchForm.addEventListener('submit', (event) => {
   event.preventDefault();
   const query = searchInput.value.trim();
   setFilter('search', query, true, `/blog/search/${query ? `?q=${encodeURIComponent(query)}` : ''}`);
   searchInput.focus();
 });
-document.addEventListener('click', (event) => {
-  const target = event.target as HTMLElement;
-  document.querySelectorAll<HTMLDetailsElement>('.window-menu[open], .shell-menu[open]').forEach((menu) => { if (!menu.contains(target)) menu.open = false; });
-});
 document.addEventListener('keydown', (event) => {
   const target = event.target as HTMLElement;
-  const openMenu = document.querySelector<HTMLDetailsElement>('.window-menu[open], .shell-menu[open]');
-  if (event.key === 'Escape' && openMenu) { openMenu.open = false; openMenu.querySelector<HTMLElement>('summary')!.focus(); return; }
+  if (event.key === 'Escape' && dismissDisclosure(true)) return;
   if (event.key === 'Escape' && dock.classList.contains('is-obscured') && dock.classList.contains('is-revealed')) {
     dockHoverSuppressed = true; setDockRevealed(false); dockEdge.focus(); return;
   }
   if (event.key === '/' && !event.metaKey && !event.ctrlKey && !event.altKey && !target.matches('input,textarea,[contenteditable="true"]')) {
-    event.preventDefault(); setFilter('search', '', true, '/blog/search/'); searchInput.focus();
+    event.preventDefault();
+    showSearch();
   }
-  if (event.key === 'Escape' && activeWindow !== 'library' && !windows[activeWindow].hidden) closeWindow(activeWindow);
+  if (event.key === 'Escape' && activeWindow !== 'library' && isVisible(windows[activeWindow])) closeWindow(activeWindow);
 });
 window.addEventListener('popstate', () => {
   const filter = pathFilter();
-  if (filter) { windows.reader.hidden = true; windows.about.hidden = true; setFilter(filter.kind, filter.value); }
+  articleRequest++;
+  if (filter) {
+    libraryUrl = location.pathname + location.search;
+    hideWindow(windows.reader);
+    hideWindow(windows.about);
+    setFilter(filter.kind, filter.value);
+  }
   else if (location.pathname.replace(/\/+$/, '') === '/about') { focusWindow('about'); }
   else if (location.pathname.startsWith('/blog/')) void openArticle(location.href, false);
 });
 
-function moveWindow(win: HTMLElement, left: number, top: number) {
-  const minLeft = 0;
-  const maxLeft = Math.max(minLeft, window.innerWidth - win.offsetWidth - 4);
-  const minTop = 38;
-  const maxTop = Math.max(minTop, window.innerHeight - win.offsetHeight - (window.innerWidth <= 760 ? 75 : 4));
-  win.style.left = `${Math.max(minLeft, Math.min(left, maxLeft))}px`;
-  win.style.top = `${Math.max(minTop, Math.min(top, maxTop))}px`;
-}
-for (const handle of document.querySelectorAll<HTMLButtonElement>('[data-drag-handle]')) {
-  const win = handle.closest<HTMLElement>('[data-window]')!;
-  let offsetX = 0, offsetY = 0;
-  handle.addEventListener('pointerdown', (event) => {
-    if (event.button !== 0 || win.classList.contains('is-maximized') || window.innerWidth <= 760) return;
-    const rect = win.getBoundingClientRect();
-    offsetX = event.clientX - rect.left; offsetY = event.clientY - rect.top;
-    handle.setPointerCapture(event.pointerId);
-    handle.classList.add('is-dragging');
-  });
-  handle.addEventListener('pointermove', (event) => {
-    if (handle.hasPointerCapture(event.pointerId)) moveWindow(win, event.clientX - offsetX, event.clientY - offsetY);
-  });
-  handle.addEventListener('lostpointercapture', () => { handle.classList.remove('is-dragging'); });
-  handle.addEventListener('keydown', (event) => {
-    const directions: Record<string, [number, number]> = { ArrowLeft: [-15, 0], ArrowRight: [15, 0], ArrowUp: [0, -15], ArrowDown: [0, 15] };
-    const direction = directions[event.key];
-    if (!direction || win.classList.contains('is-maximized')) return;
-    event.preventDefault();
-    const rect = win.getBoundingClientRect();
-    moveWindow(win, rect.left + direction[0], rect.top + direction[1]);
-    announce(t('windowMoved'));
-  });
-}
 let dockHoverSuppressed = false;
 function setDockRevealed(revealed: boolean) {
   dock.classList.toggle('is-revealed', revealed);
@@ -347,8 +406,8 @@ function isDockTarget(target: EventTarget | null) {
 function updateDockOverlap() {
   const bounds = dockAnchor.getBoundingClientRect();
   const obscured = Object.values(windows).some((win) => {
-    if (win.hidden) return false;
-    const rect = win.getBoundingClientRect();
+    if (!isVisible(win)) return false;
+    const rect = windowBox(win);
     return rect.left < bounds.right && rect.right > bounds.left && rect.top < bounds.bottom && rect.bottom > bounds.top;
   });
   dock.classList.toggle('is-obscured', obscured);
@@ -361,7 +420,7 @@ function scheduleDockOverlap() {
   dockUpdateFrame = requestAnimationFrame(updateDockOverlap);
 }
 const dockWindowObserver = new MutationObserver(scheduleDockOverlap);
-for (const win of Object.values(windows)) dockWindowObserver.observe(win, { attributes: true, attributeFilter: ['class', 'style', 'hidden'] });
+for (const win of Object.values(windows)) dockWindowObserver.observe(win, { attributes: true, attributeFilter: ['class', 'style', 'data-visible'] });
 new ResizeObserver(scheduleDockOverlap).observe(dockAnchor);
 dockEdge.addEventListener('pointerenter', (event) => { if (event.pointerType !== 'touch' && !dockHoverSuppressed) setDockRevealed(true); });
 function leaveDock(event: PointerEvent) {
@@ -376,63 +435,50 @@ document.addEventListener('pointerdown', (event) => { if (!isDockTarget(event.ta
 window.addEventListener('resize', scheduleDockOverlap);
 scheduleDockOverlap();
 
-function updateSidebarMode() {
-  windows.library.classList.remove('sidebar-open', 'sidebar-hidden');
-  sidebarToggle.setAttribute('aria-expanded', String(!mobileLayout.matches));
-}
-mobileLayout.addEventListener('change', updateSidebarMode);
-updateSidebarMode();
+mobileLayout.addEventListener('change', syncWindowAccess);
 window.addEventListener('resize', () => {
-  if (window.innerWidth > 760) for (const win of Object.values(windows)) win.inert = false;
-  else if (!windows[activeWindow].hidden) for (const [key, win] of Object.entries(windows)) win.inert = key !== activeWindow;
-  for (const win of Object.values(windows)) {
-    if (!win.hidden && !win.classList.contains('is-maximized') && win.style.left) {
-      const rect = win.getBoundingClientRect(); moveWindow(win, rect.left, rect.top);
-    }
-  }
+  for (const win of Object.values(windows)) fitWindow(win);
 });
 
 const themeButton = document.querySelector<HTMLButtonElement>('[data-theme-toggle]')!;
-const themeText = document.querySelector<HTMLElement>('[data-theme-text]')!;
+const motionButton = document.querySelector<HTMLButtonElement>('[data-motion-toggle]')!;
 function applyTheme(theme: string) {
   document.documentElement.dataset.theme = theme;
   themeButton.setAttribute('aria-pressed', String(theme === 'dark'));
-  themeText.textContent = t('darkStyle');
 }
-try { applyTheme(localStorage.getItem('desktop-theme') || 'dark'); } catch { applyTheme('dark'); }
+function applyMotion(motion: string) {
+  document.documentElement.dataset.motion = motion;
+  motionButton.setAttribute('aria-pressed', String(motion !== 'off' && !prefersReducedMotion.matches));
+  motionButton.disabled = prefersReducedMotion.matches;
+}
+try {
+  applyTheme(localStorage.getItem('desktop-theme') === 'light' ? 'light' : 'dark');
+  applyMotion(localStorage.getItem('desktop-motion') === 'off' ? 'off' : 'on');
+} catch {
+  applyTheme('dark');
+  applyMotion('on');
+}
 themeButton.addEventListener('click', () => {
   const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
   applyTheme(theme);
   try { localStorage.setItem('desktop-theme', theme); } catch { /* Theme remains applied for this page. */ }
 });
-const clock = document.querySelector<HTMLElement>('[data-clock]')!;
-function updateClock() { clock.textContent = new Intl.DateTimeFormat(language === 'zh' ? 'zh-CN' : 'en-US', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date()); }
-updateClock(); setInterval(updateClock, 30_000);
+motionButton.addEventListener('click', () => {
+  const motion = document.documentElement.dataset.motion === 'off' ? 'on' : 'off';
+  applyMotion(motion);
+  try { localStorage.setItem('desktop-motion', motion); } catch { /* Motion preference remains applied for this page. */ }
+});
+prefersReducedMotion.addEventListener('change', () => applyMotion(document.documentElement.dataset.motion!));
 
-const spotify = document.querySelector<HTMLAnchorElement>('[data-spotify-endpoint]');
-let updateSpotifyLanguage = () => {};
-if (spotify) {
-  const text = spotify.querySelector<HTMLElement>('[data-spotify-text]')!;
-  const cover = spotify.querySelector<HTMLImageElement>('[data-spotify-cover]')!;
-  let status: 'loading' | 'playing' | 'idle' | 'unavailable' = 'loading';
-  let track = '';
-  updateSpotifyLanguage = () => { text.textContent = status === 'playing' ? track : status === 'idle' ? t('spotifyIdle') : status === 'unavailable' ? t('spotifyUnavailable') : 'Spotify'; };
-  async function updateSpotify() {
-    try {
-      const response = await fetch(spotify!.dataset.spotifyEndpoint!);
-      if (!response.ok) throw new Error('Spotify unavailable');
-      const data = await response.json();
-      status = data.playing ? 'playing' : 'idle';
-      track = data.playing ? `${data.title} · ${data.artist}` : '';
-      updateSpotifyLanguage();
-      cover.hidden = !data.playing || !data.cover;
-      if (!cover.hidden) cover.src = data.cover;
-      spotify!.href = data.playing ? data.url : 'https://open.spotify.com/';
-    } catch { cover.hidden = true; status = 'unavailable'; updateSpotifyLanguage(); }
-  }
-  void updateSpotify();
-  setInterval(() => { if (!document.hidden) void updateSpotify(); }, 30_000);
+const clock = document.querySelector<HTMLElement>('[data-clock]')!;
+function updateClock() {
+  clock.textContent = new Intl.DateTimeFormat(document.documentElement.lang, {
+    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).format(new Date());
 }
+const updateCalendar = initCalendar();
+const updateSpotifyLanguage = initSpotify(t);
+setInterval(updateClock, 30_000);
 
 function applyLanguage(next: Language) {
   language = next;
@@ -464,39 +510,41 @@ function applyLanguage(next: Language) {
   applyArticleLanguage();
   updateDates();
   filterPosts();
-  applyTheme(document.documentElement.dataset.theme || 'dark');
   updateClock();
+  updateCalendar(document.documentElement.lang);
   updateSpotifyLanguage();
-  if (!windows[activeWindow].hidden) {
+  if (isVisible(windows[activeWindow])) {
     activeTitle.textContent = t(activeWindow === 'library' ? 'posts' : activeWindow === 'reader' ? 'reader' : 'aboutShort');
     if (activeWindow === 'reader') syncReaderTitle();
     else document.title = blogTitle(activeWindow === 'about' ? t('aboutShort') : heading.textContent!);
   } else activeTitle.textContent = t('desktop');
 }
-const shellMenus = Array.from(document.querySelectorAll<HTMLDetailsElement>('.shell-menu'));
-shellMenus.forEach((menu) => menu.addEventListener('toggle', () => { if (menu.open) shellMenus.forEach((other) => { if (other !== menu) other.open = false; }); }));
 document.querySelectorAll<HTMLButtonElement>('[data-set-language]').forEach((button) => button.addEventListener('click', () => {
-  const menu = button.closest<HTMLDetailsElement>('details')!;
   applyLanguage(button.dataset.setLanguage as Language);
   try { localStorage.setItem('desktop-language', language); } catch { /* Language remains applied for this page. */ }
-  menu.open = false;
-  menu.querySelector<HTMLElement>('summary')!.focus();
+  dismissDisclosure(true);
 }));
+document.querySelector<HTMLButtonElement>('[data-copy-email]')!.addEventListener('click', (event) => {
+  const button = event.currentTarget as HTMLButtonElement;
+  navigator.clipboard.writeText(button.dataset.copyEmail!)
+    .then(() => announce(t('emailCopied')))
+    .catch(() => announce(t('copyEmailFailed')));
+  dismissDisclosure(true);
+});
 document.querySelectorAll<HTMLButtonElement>('[data-quick-action]').forEach((button) => button.addEventListener('click', () => {
   const action = button.dataset.quickAction;
   if (action === 'library') setFilter('all', '', true, '/blog/');
   else if (action === 'about') { pushUrl('/about/'); focusWindow('about'); document.title = blogTitle(t('aboutShort')); }
   else {
-    Object.values(windows).forEach((win) => { win.hidden = true; });
+    articleRequest++;
+    Object.values(windows).forEach(hideWindow);
     activeTitle.textContent = t('desktop');
     document.title = blogTitle(t('desktop'));
   }
-  const menu = button.closest<HTMLDetailsElement>('details')!;
-  menu.open = false;
-  menu.querySelector<HTMLElement>('summary')!.focus();
+  dismissDisclosure(true);
 }));
+
 setFilter(currentFilter, currentValue);
 if (initialWindow === 'reader') { focusWindow('reader'); syncReaderTitle(); }
 else if (initialWindow === 'about') { focusWindow('about'); document.title = blogTitle(t('aboutShort')); }
 applyLanguage(language);
-if (prefersReducedMotion.matches) document.documentElement.style.scrollBehavior = 'auto';

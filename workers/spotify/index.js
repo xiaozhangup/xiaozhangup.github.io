@@ -18,7 +18,15 @@ export default {
       if (!response.ok) return reply({ error: 'Spotify unavailable' }, 502);
       const data = await response.json();
       if (!data.is_playing || !data.item || data.currently_playing_type !== 'track') return reply({ playing: false });
-      return reply({ playing: true, title: data.item.name, artist: data.item.artists.map(a => a.name).join(', '), cover: data.item.album.images[1]?.url || data.item.album.images[0]?.url, url: data.item.external_urls.spotify });
+      return reply({
+        playing: true,
+        title: data.item.name,
+        artist: data.item.artists.map(a => a.name).join(', '),
+        cover: data.item.album.images[1]?.url || data.item.album.images[0]?.url,
+        url: data.item.external_urls.spotify,
+        progress_ms: data.progress_ms,
+        duration_ms: data.item.duration_ms,
+      });
     } catch {
       return reply({ error: 'Spotify unavailable' }, 502);
     }

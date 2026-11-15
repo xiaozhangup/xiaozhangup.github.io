@@ -1,0 +1,10 @@
+---
+interface Props { expanded?: boolean }
+const { expanded = false } = Astro.props;
+const heights = expanded ? [46, 66, 54, 30, 55, 65, 48, 30, 39, 66] : [11, 6, 13, 9, 12];
+---
+<span class:list={['music-wave', expanded && 'music-wave--expanded']} aria-hidden="true">
+  {heights.map((height, i) => (
+    <i style={`--bar-height:${height}px; --bar-pace:${1580 + (i * 227) % 860}ms; --bar-phase:-${(i * 419) % 2100}ms; --bar-low:${.28 + (i % 4) * .08}`}></i>
+  ))}
+</span>
