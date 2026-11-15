@@ -252,7 +252,7 @@ html[data-theme='light'] .music-wave { color: var(--wave-light, #414146); }
 .spotify-open:hover, .spotify-open:focus-visible { background: rgb(255 255 255 / 21%); }
 .spotify-open:active { background: rgb(255 255 255 / 29%); }
 :is(.music-popover, .quick-music) .spotify-open { color: var(--music-fg); background: var(--music-border); }
-:is(.music-popover, .quick-music) .spotify-open:hover { background: color-mix(in srgb, var(--music-muted) 40%, transparent); }
+.music-popover .spotify-open:hover { background: color-mix(in srgb, var(--music-muted) 40%, transparent); }
 
 .clock-popover { width: 270px; padding: 10px; border-radius: 24px; }
 .clock-popover.has-music { width: 600px; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }

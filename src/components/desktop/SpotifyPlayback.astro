@@ -4,7 +4,7 @@ import MusicWave from './MusicWave.astro';
 
 interface Props { compact?: boolean }
 const { compact = false } = Astro.props;
-const coverSize = compact ? 48 : 84;
+const coverSize = compact ? 40 : 84;
 ---
 <div class="music-idle" data-spotify-idle>
   <Icon name="simple-icons:spotify" aria-hidden="true" />

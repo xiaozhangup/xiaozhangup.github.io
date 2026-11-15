@@ -99,11 +99,6 @@ const email = 'xiaozhangshiw@163.com';
       </button>
       <div class="disclosure-panel shell-popover quick-popover" id="quick-settings" inert>
         <div class="quick-grid">
-          {endpoint && (
-            <article class="mobile-only quick-music" aria-label="Spotify 播放状态" data-i18n-aria="spotifyStatus">
-              <SpotifyPlayback compact />
-            </article>
-          )}
           <div class="quick-group quick-preferences">
             <h2 class="mobile-only" data-i18n="preferences">偏好设置</h2>
             <div class="quick-rows">
@@ -141,6 +136,11 @@ const email = 'xiaozhangshiw@163.com';
               <a class="quick-action quick-action--wide" href="/rss.xml"><AdwIcon name="application-rss+xml" /><span data-i18n="rss">RSS 订阅</span><AdwIcon name="go-next" /></a>
             </div>
           </div>
+          {endpoint && (
+            <article class="mobile-only quick-music" aria-label="Spotify 播放状态" data-i18n-aria="spotifyStatus">
+              <SpotifyPlayback compact />
+            </article>
+          )}
         </div>
       </div>
     </div>
