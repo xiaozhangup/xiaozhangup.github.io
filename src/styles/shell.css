@@ -48,10 +48,14 @@
   cursor: pointer;
   white-space: nowrap;
 }
-.shell-trigger:hover { background: rgb(255 255 255 / 16%); }
-.shell-trigger[aria-expanded='true'] { background: rgb(255 255 255 / 25%); }
-.shell-trigger:active { background: rgb(255 255 255 / 33%); }
-.clock-trigger { padding-inline: 10px; }
+.shell-trigger:hover { background-color: rgb(255 255 255 / 16%); }
+.shell-trigger[aria-expanded='true'] { background-color: rgb(255 255 255 / 25%); }
+.shell-trigger:active { background-color: rgb(255 255 255 / 33%); }
+.clock-trigger {
+  padding-inline: 10px;
+  border-block: 1px solid transparent;
+  background-clip: padding-box;
+}
 .topbar-clock { font-variant-numeric: tabular-nums; line-height: 1; }
 .language-trigger { font-size: 14px; }
 .quick-trigger .adw-icon:last-child { width: 12px; height: 12px; }

@@ -30,7 +30,7 @@
   --dim: color-mix(in srgb, var(--window-fg-color) 60%, transparent);
   --scroll: color-mix(in srgb, var(--window-fg-color) 30%, transparent);
   --shell-accent: #2190a4;
-  --shell-height: 26px;
+  --shell-height: 27px;
   --sidebar-size: 196px;
   font-family: 'Adwaita Sans', 'Noto Sans CJK SC', 'Noto Sans SC', sans-serif;
   font-synthesis: none;
