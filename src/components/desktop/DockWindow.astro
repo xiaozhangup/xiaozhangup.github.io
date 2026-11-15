@@ -1,7 +1,7 @@
 ---
-interface Props { kind: 'library' | 'reader' | 'about'; label: string; href: string; active?: boolean }
+interface Props { kind: 'library' | 'reader' | 'about' | 'music'; label: string; href: string; active?: boolean }
 const { kind, label, href, active } = Astro.props;
-const icon = { library: 'gnome-files', reader: 'text-x-generic', about: 'help-about' }[kind];
+const icon = { library: 'gnome-files', reader: 'text-x-generic', about: 'help-about', music: 'folder-music' }[kind];
 ---
 <a class:list={['dock-item', active && 'is-active']} href={href} data-dock-window={kind} data-tooltip={label} aria-label={label}>
   <img class="dock-app" src={`/adwaita/color/${icon}.svg`} alt="" />

@@ -1,26 +1,39 @@
 import { coverColor, initMusicWaves } from './musicVisuals';
 
-type Playback = {
-  playing: true;
+interface Track {
   title: string;
   artist: string;
   cover?: string;
-  url?: string;
-  progress_ms?: number | null;
+  url: string;
   duration_ms?: number | null;
-} | { playing: false };
+}
+type Playback = ({ playing: true; progress_ms?: number | null } & Track) | { playing: false };
+export interface Listening {
+  tracks: Track[] | null;
+  artists: { name: string; image?: string; url: string }[] | null;
+  artistSource: 'top' | 'recent';
+}
 
-function timecode(milliseconds: number) {
+export function timecode(milliseconds: number) {
   const seconds = Math.floor(milliseconds / 1000);
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
-export function initSpotify(t: (key: string) => string) {
-  const bar = document.querySelector<HTMLElement>('[data-spotify-endpoint]');
-  if (!bar) return () => {};
+function shuffled(tracks: Track[]) {
+  const order = [...tracks];
+  for (let index = order.length - 1; index > 0; index--) {
+    const other = Math.floor(Math.random() * (index + 1));
+    [order[index], order[other]] = [order[other], order[index]];
+  }
+  return order;
+}
 
+export function initSpotify(t: (key: string) => string, mobile: MediaQueryList, showListening: (data: Listening | null) => void) {
+  const bar = document.querySelector<HTMLElement>('[data-spotify-endpoint]');
+  if (!bar) return { updateLanguage() {}, loadListening: () => showListening(null) };
+  const endpoint = bar.dataset.spotifyEndpoint!;
+  const historyEndpoint = new URL('/listening', endpoint).href;
   const pill = bar.querySelector<HTMLElement>('[data-spotify-pill]')!;
-  const coverImages = Array.from(bar.querySelectorAll<HTMLImageElement>('[data-spotify-cover]'));
   const panel = bar.querySelector<HTMLElement>('.music-menu')!;
   const quickCard = bar.querySelector<HTMLElement>('.quick-music')!;
   const quickMenu = quickCard.closest<HTMLElement>('[data-disclosure]')!;
@@ -32,12 +45,18 @@ export function initSpotify(t: (key: string) => string) {
     elapsed: element.querySelector<HTMLElement>('[data-spotify-elapsed]')!,
     duration: element.querySelector<HTMLElement>('[data-spotify-duration]')!,
   }));
-  const tracks = Array.from(bar.querySelectorAll<HTMLElement>('[data-spotify-playing]'));
+  const coverImages = Array.from(bar.querySelectorAll<HTMLImageElement>('[data-spotify-cover]'));
+  const active = Array.from(bar.querySelectorAll<HTMLElement>('[data-spotify-playing]'));
+  const recent = Array.from(bar.querySelectorAll<HTMLElement>('[data-spotify-recent]'));
+  const display = Array.from(bar.querySelectorAll<HTMLElement>('[data-spotify-display]'));
   const idle = Array.from(bar.querySelectorAll<HTMLElement>('[data-spotify-idle]'));
   const statuses = Array.from(bar.querySelectorAll<HTMLElement>('[data-spotify-status]'));
   const titles = Array.from(bar.querySelectorAll<HTMLElement>('[data-spotify-title]'));
   const artists = Array.from(bar.querySelectorAll<HTMLElement>('[data-spotify-artist]'));
   const links = Array.from(bar.querySelectorAll<HTMLAnchorElement>('[data-spotify-link]'));
+  const rotationControls = bar.querySelector<HTMLElement>('[data-history-controls]')!;
+  const pauseButton = bar.querySelector<HTMLButtonElement>('[data-history-pause]')!;
+  const nextButton = bar.querySelector<HTMLButtonElement>('[data-history-next]')!;
 
   let playback: Playback = { playing: false };
   let state: 'loading' | 'active' | 'idle' | 'unavailable' = 'loading';
@@ -46,6 +65,13 @@ export function initSpotify(t: (key: string) => string) {
   let refreshing = false;
   let timer: number | undefined;
   let currentCover: string | undefined;
+  let lastHistoryFetch = -Infinity;
+  let historyRequest: Promise<void> | undefined;
+  let historyKey: string | undefined;
+  let recentOrder: Track[] = [];
+  let recentIndex = 0;
+  let rotationPaused = false;
+
   function updateCoverColor(url: string | undefined) {
     if (url === currentCover) return;
     currentCover = url;
@@ -61,10 +87,11 @@ export function initSpotify(t: (key: string) => string) {
       if (currentCover === url) applyColor(rgb);
     });
   }
-  function renderText() {
+  function updateLanguage() {
     const status = t(state === 'idle' ? 'spotifyIdle' : state === 'unavailable' ? 'spotifyUnavailable' : 'spotifyLoading');
     statuses.forEach((text) => { text.textContent = status; });
-    pill.textContent = playback.playing ? `${playback.title} • ${playback.artist}` : 'Spotify';
+    pauseButton.textContent = t(rotationPaused ? 'resumeRotation' : 'pauseRotation');
+    pauseButton.setAttribute('aria-pressed', String(rotationPaused));
   }
 
   function runProgress() {
@@ -101,31 +128,65 @@ export function initSpotify(t: (key: string) => string) {
 
   function render() {
     const track = playback.playing ? playback : null;
+    const recentTrack = state === 'idle' && !mobile.matches ? recentOrder[recentIndex] : undefined;
+    const shown = track ?? recentTrack;
     bar!.toggleAttribute('data-playing', Boolean(track));
+    bar!.toggleAttribute('data-recent', Boolean(recentTrack));
     setWavePlaying(Boolean(track));
-    updateCoverColor(track?.cover);
-    tracks.forEach((node) => { node.hidden = !track; });
-    idle.forEach((node) => { node.hidden = Boolean(track); });
-    if (track) {
-      titles.forEach((node) => { node.textContent = track.title; });
-      artists.forEach((node) => { node.textContent = track.artist; });
+    updateCoverColor(shown?.cover);
+    quickCard.hidden = !track;
+    active.forEach((node) => { node.hidden = !track; });
+    recent.forEach((node) => { node.hidden = !recentTrack; });
+    display.forEach((node) => { node.hidden = !shown; });
+    idle.forEach((node) => { node.hidden = Boolean(shown); });
+    rotationControls.hidden = recentOrder.length < 2;
+    pill.textContent = shown ? `${shown.title} • ${shown.artist}` : 'Spotify';
+    if (shown) {
+      titles.forEach((node) => { node.textContent = shown.title; });
+      artists.forEach((node) => { node.textContent = shown.artist; });
     }
     for (const img of coverImages) {
-      if (track?.cover === img.getAttribute('src')) continue;
+      if ((shown?.cover ?? null) === img.getAttribute('src')) continue;
       img.classList.remove('loaded');
-      if (track?.cover) img.src = track.cover;
+      if (shown?.cover) img.src = shown.cover;
       else img.removeAttribute('src');
     }
-    if (track?.cover) bar!.style.setProperty('--track-art', `url("${track.cover.replaceAll('"', '%22')}")`);
+    if (shown?.cover) bar!.style.setProperty('--track-art', `url("${shown.cover.replaceAll('"', '%22')}")`);
     else bar!.style.removeProperty('--track-art');
     for (const link of links) {
-      const url = track?.url;
+      const url = shown?.url;
       link.hidden = !url?.startsWith('https://open.spotify.com/');
-      if (!link.hidden) link.href = url!;
-      else link.removeAttribute('href');
+      if (link.hidden) link.removeAttribute('href');
+      else link.href = url!;
     }
     runProgress();
-    renderText();
+    updateLanguage();
+  }
+
+  function loadListening() {
+    if (historyRequest || performance.now() - lastHistoryFetch < 120_000) return;
+    lastHistoryFetch = performance.now();
+    historyRequest = fetch(historyEndpoint)
+      .then((response) => {
+        if (!response.ok) throw new Error('Spotify history unavailable');
+        return response.json() as Promise<Listening>;
+      })
+      .then((listening) => {
+        showListening(listening);
+        const tracks = listening.tracks ?? [];
+        const key = tracks.map((track) => track.url).join('\n');
+        if (key !== historyKey) {
+          const previous = recentOrder[recentIndex];
+          historyKey = key;
+          recentOrder = shuffled(tracks);
+          recentIndex = Math.max(0, recentOrder.findIndex((track) => track.url === previous?.url));
+        }
+        render();
+      })
+      .catch(() => {
+        if (historyKey === undefined) showListening(null);
+      })
+      .finally(() => { historyRequest = undefined; });
   }
 
   async function refresh() {
@@ -133,7 +194,7 @@ export function initSpotify(t: (key: string) => string) {
     refreshing = true;
     lastFetch = performance.now();
     try {
-      const response = await fetch(bar!.dataset.spotifyEndpoint!);
+      const response = await fetch(endpoint);
       if (!response.ok) throw new Error('Spotify unavailable');
       playback = await response.json();
       sampledAt = performance.now();
@@ -144,8 +205,22 @@ export function initSpotify(t: (key: string) => string) {
     } finally {
       refreshing = false;
       render();
+      if (state === 'idle' && !mobile.matches) loadListening();
     }
   }
+
+  function nextTrack() {
+    recentIndex = (recentIndex + 1) % recentOrder.length;
+    render();
+  }
+  nextButton.addEventListener('click', nextTrack);
+  pauseButton.addEventListener('click', () => {
+    rotationPaused = !rotationPaused;
+    updateLanguage();
+  });
+  window.setInterval(() => {
+    if (state === 'idle' && recentOrder.length > 1 && !rotationPaused && !document.hidden && !mobile.matches) nextTrack();
+  }, 14_000);
 
   for (const menu of [panel, quickMenu, bar.querySelector<HTMLElement>('.clock-menu')!]) {
     menu.addEventListener('disclosurechange', () => {
@@ -153,10 +228,14 @@ export function initSpotify(t: (key: string) => string) {
       if (menu.hasAttribute('data-open') && (menu !== quickMenu || quickCard.clientWidth > 0)) void refresh();
     });
   }
+  mobile.addEventListener('change', () => {
+    render();
+    if (state === 'idle' && !mobile.matches) loadListening();
+  });
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) void refresh();
   });
   void refresh();
   window.setInterval(() => { if (!document.hidden) void refresh(); }, 30_000);
-  return renderText;
+  return { updateLanguage, loadListening };
 }

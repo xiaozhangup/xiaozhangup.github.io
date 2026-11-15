@@ -3,33 +3,32 @@ import { Icon } from 'astro-icon/components';
 import AdwIcon from './AdwIcon.astro';
 import MusicWave from './MusicWave.astro';
 import SpotifyPlayback from './SpotifyPlayback.astro';
+import ContactIcon from './ContactIcon.astro';
+import ContactActions from './ContactActions.astro';
+import { labelPair, menus } from '@/desktopLinks';
 
 const endpoint = import.meta.env.PUBLIC_SPOTIFY_ENDPOINT;
-const email = 'xiaozhangshiw@163.com';
+const mobileContacts = menus.filter((menu) => menu.mobile !== false).flatMap((menu) => menu.items);
 ---
 <header class="topbar" data-spotify-endpoint={endpoint}>
   <div class="topbar-start">
     <span class="workspace-indicator" aria-hidden="true"><i class="workspace-current"></i><i></i></span>
 
-    <div class="shell-menu" data-disclosure data-align="start">
-      <button type="button" class="shell-trigger shell-contact" data-disclosure-trigger aria-controls="github-menu" aria-expanded="false">GitHub</button>
-      <div class="disclosure-panel shell-popover shell-list" id="github-menu" inert>
-        <a class="shell-list-row" href="https://github.com/xiaozhangup" target="_blank" rel="noopener noreferrer">
-          <Icon name="simple-icons:github" aria-hidden="true" /><span data-i18n="githubProfile">GitHub 主页</span>
-        </a>
-        <a class="shell-list-row" href="https://github.com/xiaozhangup/xiaozhangup.github.io" target="_blank" rel="noopener noreferrer">
-          <AdwIcon name="text-x-generic" /><span data-i18n="blogSource">博客源码</span>
-        </a>
-      </div>
-    </div>
-
-    <div class="shell-menu" data-disclosure data-align="start">
-      <button type="button" class="shell-trigger shell-contact" data-i18n="email" data-disclosure-trigger aria-controls="email-menu" aria-expanded="false">邮箱</button>
-      <div class="disclosure-panel shell-popover shell-list" id="email-menu" inert>
-        <a class="shell-list-row" href={`mailto:${email}`}><AdwIcon name="mail-message-new" /><span>{email}</span></a>
-        <button type="button" class="shell-list-row" data-copy-email={email}><AdwIcon name="edit-copy" /><span data-i18n="copyEmail">复制邮箱</span></button>
-      </div>
-    </div>
+    {menus.map((menu) => {
+      const label = labelPair(menu.label);
+      const id = `contact-${menu.id}`;
+      return (
+        <div class="shell-menu" data-disclosure data-align="start">
+          <button type="button" class="shell-trigger shell-contact" data-disclosure-trigger aria-controls={id} aria-expanded="false">
+            {menu.icon && <ContactIcon name={menu.icon} />}
+            <span data-label-zh={label.zh} data-label-en={label.en}>{label.zh}</span>
+          </button>
+          <div class="disclosure-panel shell-popover shell-list" id={id} inert>
+            <ContactActions items={menu.items} rowClass="shell-list-row" />
+          </div>
+        </div>
+      );
+    })}
     <span class="visually-hidden" data-active-title>文章</span>
 
     {endpoint && (
@@ -41,10 +40,23 @@ const email = 'xiaozhangshiw@163.com';
           </span>
           <span class="music-pill-label" data-spotify-pill>Spotify</span>
           <MusicWave />
+          <span class="music-recent-icon" data-spotify-recent hidden><AdwIcon name="document-open-recent" /></span>
         </button>
 
         <div class="disclosure-panel shell-popover music-popover" id="music-menu" inert>
           <SpotifyPlayback />
+          <div class="music-recent" data-spotify-recent hidden>
+            <header class="music-listening"><AdwIcon name="document-open-recent" /><span data-i18n="recentlyPlayed">最近听过</span></header>
+            <div class="music-main">
+              <div class="music-cover"><Icon name="simple-icons:spotify" aria-hidden="true" /><img data-spotify-cover alt="" width="48" height="48" /></div>
+              <div class="music-track"><strong data-spotify-title></strong><span data-spotify-artist></span></div>
+              <a class="spotify-open" data-spotify-link target="_blank" rel="noopener noreferrer" data-i18n-aria="openSpotify" aria-label="在 Spotify 打开" hidden><Icon name="simple-icons:spotify" aria-hidden="true" /></a>
+            </div>
+            <div class="music-recent-controls" data-history-controls hidden>
+              <button type="button" data-history-pause aria-pressed="false">暂停轮播</button>
+              <button type="button" data-history-next data-i18n="nextTrack">换一首</button>
+            </div>
+          </div>
         </div>
       </div>
     )}
@@ -58,9 +70,9 @@ const email = 'xiaozhangshiw@163.com';
       {endpoint && (
         <div class="clock-media">
           <div class="clock-media-card">
-            <div class="clock-media-heading"><Icon name="simple-icons:spotify" aria-hidden="true" /> Spotify <span data-i18n="listeningNow" data-spotify-playing hidden>我正在听</span></div>
+            <div class="clock-media-heading"><Icon name="simple-icons:spotify" aria-hidden="true" /> Spotify <span data-i18n="listeningNow" data-spotify-playing hidden>我正在听</span><span data-i18n="recentlyPlayed" data-spotify-recent hidden>最近听过</span></div>
             <div class="clock-media-idle" data-spotify-status data-spotify-idle>正在读取播放状态</div>
-            <div class="clock-media-track" data-spotify-playing hidden>
+            <div class="clock-media-track" data-spotify-display hidden>
               <div class="music-cover"><Icon name="simple-icons:spotify" aria-hidden="true" /><img data-spotify-cover alt="" width="40" height="40" /></div>
               <div class="clock-track-text"><strong data-spotify-title></strong><span data-spotify-artist></span></div>
               <a class="spotify-open" data-spotify-link target="_blank" rel="noopener noreferrer" title="在 Spotify 打开" aria-label="在 Spotify 打开" data-i18n-aria="openSpotify" hidden><Icon name="simple-icons:spotify" aria-hidden="true" /></a>
@@ -124,20 +136,19 @@ const email = 'xiaozhangshiw@163.com';
               <button type="button" class="quick-action" data-quick-action="library"><AdwIcon name="text-x-generic" /><span data-i18n="allPosts">全部文章</span></button>
               <button type="button" class="quick-action" data-quick-action="desktop"><AdwIcon name="user-desktop" /><span data-i18n="showDesktop">显示桌面</span></button>
               <button type="button" class="quick-action quick-action--wide" data-quick-action="about"><AdwIcon name="help-about" /><span data-i18n="about">关于博客</span><AdwIcon name="go-next" /></button>
-              <details class="mobile-only quick-contact">
-                <summary class="quick-action"><AdwIcon name="mail-message-new" /><span data-i18n="contact">联系方式</span><AdwIcon name="go-next" class="contact-chevron" /></summary>
-                <div class="quick-contact-links">
-                  <a class="quick-action" href="https://github.com/xiaozhangup" target="_blank" rel="noopener noreferrer"><Icon name="simple-icons:github" aria-hidden="true" /><span data-i18n="githubProfile">GitHub 主页</span></a>
-                  <a class="quick-action" href="https://github.com/xiaozhangup/xiaozhangup.github.io" target="_blank" rel="noopener noreferrer"><AdwIcon name="text-x-generic" /><span data-i18n="blogSource">博客源码</span></a>
-                  <a class="quick-action" href={`mailto:${email}`}><AdwIcon name="mail-message-new" /><span>{email}</span></a>
-                  <button type="button" class="quick-action" data-copy-email={email}><AdwIcon name="edit-copy" /><span data-i18n="copyEmail">复制邮箱</span></button>
-                </div>
-              </details>
+              {mobileContacts.length > 0 && (
+                <details class="mobile-only quick-contact">
+                  <summary class="quick-action"><AdwIcon name="mail-message-new" /><span data-i18n="contact">联系方式</span><AdwIcon name="go-next" class="contact-chevron" /></summary>
+                  <div class="quick-contact-links">
+                    <ContactActions items={mobileContacts} rowClass="quick-action" />
+                  </div>
+                </details>
+              )}
               <a class="quick-action quick-action--wide" href="/rss.xml"><AdwIcon name="application-rss+xml" /><span data-i18n="rss">RSS 订阅</span><AdwIcon name="go-next" /></a>
             </div>
           </div>
           {endpoint && (
-            <article class="mobile-only quick-music" aria-label="Spotify 播放状态" data-i18n-aria="spotifyStatus">
+            <article class="mobile-only quick-music" hidden aria-label="Spotify 播放状态" data-i18n-aria="spotifyStatus">
               <SpotifyPlayback compact />
               <a class="quick-music-link" data-spotify-link target="_blank" rel="noopener noreferrer" aria-label="在 Spotify 打开" data-i18n-aria="openSpotify" hidden>
                 <AdwIcon name="go-next" />

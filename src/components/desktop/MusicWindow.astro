@@ -1,0 +1,44 @@
+---
+import AdwIcon from './AdwIcon.astro';
+import WindowControls from './WindowControls.astro';
+import WindowResizeAreas from './WindowResizeAreas.astro';
+
+interface Props { active?: boolean }
+const { active = false } = Astro.props;
+---
+<section class="window window--music" data-window="music" data-visible={active ? '' : undefined} data-active={active ? '' : undefined} inert={!active} aria-label="音乐">
+  <header class="window-header">
+    <div class="mobile-about-back mobile-only">
+      <a href="/blog/" data-open-library data-app-back class="toolbar-icon" data-i18n-aria="backToPosts" aria-label="返回文章列表"><AdwIcon name="go-previous" /></a>
+    </div>
+    <span class="mobile-about-title mobile-only" data-i18n="music">音乐</span>
+    <button type="button" class="window-drag" data-drag-handle data-i18n-aria="moveWindow" aria-label="移动窗口，使用方向键调整位置">
+      <span class="window-title" data-i18n="music">音乐</span>
+    </button>
+    <div class="window-controls"><WindowControls name="music" /></div>
+  </header>
+  <div class="music-window-switcher">
+    <div class="music-window-tabs" role="tablist" aria-label="音乐视图" data-i18n-aria="musicViews" {...{ focusgroup: 'tablist nomemory' }}>
+      <button type="button" id="music-tracks-tab" role="tab" aria-selected="true" {...{ focusgroupstart: '' }}>
+        <AdwIcon name="document-open-recent" /><span data-i18n="recentlyPlayed">最近听过</span>
+      </button>
+      <button type="button" id="music-artists-tab" role="tab" aria-selected="false">
+        <AdwIcon name="avatar-default" /><span data-i18n="artists">歌手</span>
+      </button>
+    </div>
+  </div>
+  <div class="music-window-scroll">
+    <p class="music-wait" data-listening-status aria-live="polite"><span data-i18n="listeningLoading">正在读取收听记录</span></p>
+    <section id="music-tracks" role="tabpanel" aria-labelledby="music-tracks-tab" tabindex="0">
+      <div class="music-window-heading"><h2 data-i18n="recentTracks">最近听过的歌</h2><span class="music-data-source">Spotify</span></div>
+      <ol class="music-track-list" data-listening-tracks></ol>
+      <p class="music-wait" data-listening-empty="tracks" hidden></p>
+    </section>
+    <section id="music-artists" role="tabpanel" aria-labelledby="music-artists-tab" hidden>
+      <div class="music-window-heading"><h2 data-i18n="artists">歌手</h2><span class="music-data-source" data-artist-source></span></div>
+      <ul class="music-artist-grid" data-listening-artists></ul>
+      <p class="music-wait" data-listening-empty="artists" hidden></p>
+    </section>
+  </div>
+  <WindowResizeAreas />
+</section>

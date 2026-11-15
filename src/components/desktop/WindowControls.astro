@@ -1,7 +1,7 @@
 ---
 import AdwIcon from './AdwIcon.astro';
 
-interface Props { name: 'library' | 'reader' | 'about' }
+interface Props { name: 'library' | 'reader' | 'about' | 'music' }
 const { name } = Astro.props;
 const hasMaximize = name !== 'about';
 const exit = name === 'library' ? '/' : '/blog/';

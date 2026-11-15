@@ -1,0 +1,24 @@
+---
+import { labelPair, type ContactAction } from '@/desktopLinks';
+import ContactIcon from './ContactIcon.astro';
+
+interface Props { items: ContactAction[]; rowClass: string }
+const { items, rowClass } = Astro.props;
+---
+{items.map((item) => {
+  const label = labelPair(item.label);
+  if (item.type === 'link') return (
+    <a class={rowClass} href={item.href} target={item.newTab ? '_blank' : undefined} rel={item.newTab ? 'noopener noreferrer' : undefined}>
+      {item.icon && <ContactIcon name={item.icon} />}<span data-label-zh={label.zh} data-label-en={label.en}>{label.zh}</span>
+    </a>
+  );
+  const success = item.success === undefined ? undefined : labelPair(item.success);
+  const failure = item.failure === undefined ? undefined : labelPair(item.failure);
+  return (
+    <button type="button" class={rowClass} data-copy-value={item.value}
+      data-copy-success-zh={success?.zh} data-copy-success-en={success?.en}
+      data-copy-failure-zh={failure?.zh} data-copy-failure-en={failure?.en}>
+      {item.icon && <ContactIcon name={item.icon} />}<span data-label-zh={label.zh} data-label-en={label.en}>{label.zh}</span>
+    </button>
+  );
+})}

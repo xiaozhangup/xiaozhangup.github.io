@@ -1,0 +1,32 @@
+# label 支持纯文本或 { zh: 中文, en: English }。
+# icon 可用 public/adwaita/symbolic/ 中的符号名（去掉 -symbolic.svg），
+# 也可用已安装图标库的完整名称，例如 simple-icons:github。
+# items 按顺序组合 link（支持 mailto:）和 copy。newTab 默认关闭。
+# success 和 failure 是 copy 可选的反馈文案。mobile: false 可仅在桌面展示该菜单。
+menus:
+  - id: github
+    label: GitHub
+    items:
+      - type: link
+        label: { zh: GitHub 主页, en: GitHub profile }
+        icon: simple-icons:github
+        href: https://github.com/xiaozhangup
+        newTab: true
+      - type: link
+        label: { zh: 博客源码, en: Blog source }
+        icon: text-x-generic
+        href: https://github.com/xiaozhangup/xiaozhangup.github.io
+        newTab: true
+  - id: email
+    label: { zh: 邮箱, en: Email }
+    items:
+      - type: link
+        label: xiaozhangshiw@163.com
+        icon: mail-message-new
+        href: mailto:xiaozhangshiw@163.com
+      - type: copy
+        label: { zh: 复制邮箱, en: Copy email address }
+        icon: edit-copy
+        value: xiaozhangshiw@163.com
+        success: { zh: 邮箱地址已复制, en: Email address copied }
+        failure: { zh: 无法复制邮箱地址, en: Could not copy the email address }

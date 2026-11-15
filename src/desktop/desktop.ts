@@ -1,16 +1,18 @@
 import { dismissDisclosure, initDisclosures } from './disclosures';
 import { initDesktopShortcuts } from './desktopShortcuts';
 import { messages, type Language } from './i18n';
+import { initListeningWindow } from './listeningWindow';
 import { initCalendar } from './shellCalendar';
 import { initSpotify } from './spotify';
 import { animateDockFlight, animateWindowChange, beginKeyboardResize, bindWindowGeometry, fitWindow, windowBox } from './windowGeometry';
 
 type FilterKind = 'all' | 'categories' | 'tags' | 'archives' | 'search' | 'category' | 'tag';
-type WindowKind = 'library' | 'reader' | 'about';
+type WindowKind = 'library' | 'reader' | 'about' | 'music';
 
 const root = document.querySelector<HTMLElement>('.desktop')!;
 const library = root.querySelector<HTMLElement>('[data-window="library"]')!;
 const about = root.querySelector<HTMLElement>('[data-window="about"]')!;
+const music = root.querySelector<HTMLElement>('[data-window="music"]')!;
 const initialReader = root.querySelector<HTMLElement>('[data-window="reader"]');
 const readerTemplate = root.querySelector<HTMLTemplateElement>('[data-reader-template]')!;
 const dockTemplate = root.querySelector<HTMLTemplateElement>('[data-dock-template]')!;
@@ -59,6 +61,9 @@ const blogTitle = (title: string) => `${title} · ${language === 'zh' ? 'xiaozha
 const postCount = (count: number) => language === 'zh' ? `${count} 篇文章` : `${count} ${count === 1 ? 'post' : 'posts'}`;
 
 function translateStatic(scope: ParentNode = document) {
+  scope.querySelectorAll<HTMLElement>('[data-label-zh]').forEach((el) => {
+    el.textContent = language === 'zh' ? el.dataset.labelZh! : el.dataset.labelEn!;
+  });
   scope.querySelectorAll<HTMLElement>('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n!); });
   scope.querySelectorAll<HTMLElement>('[data-i18n-aria]').forEach((el) => {
     const text = t(el.dataset.i18nAria!);
@@ -89,10 +94,16 @@ function announce(message: string) { announcer.textContent = message; }
 const isVisible = (win: HTMLElement) => win.hasAttribute('data-visible');
 function windowKind(win: HTMLElement) { return win.dataset.window as WindowKind; }
 function windowRoute(win: HTMLElement) {
-  return win === library ? libraryUrl : win === about ? '/about/' : win.dataset.articleUrl!;
+  if (win === library) return libraryUrl;
+  if (win === about) return '/about/';
+  if (win === music) return '/music/';
+  return win.dataset.articleUrl!;
 }
 function windowTitle(win: HTMLElement) {
-  return win === library ? heading.textContent! : win === about ? t('aboutShort') : visibleReaderHeading(win)?.textContent?.trim() || t('reader');
+  if (win === library) return heading.textContent!;
+  if (win === about) return t('aboutShort');
+  if (win === music) return t('music');
+  return visibleReaderHeading(win)?.textContent?.trim() || t('reader');
 }
 function updateDockItem(win: HTMLElement, item: HTMLAnchorElement) {
   const title = win === library ? t('posts') : windowTitle(win);
@@ -108,7 +119,7 @@ function dockItemFor(win: HTMLElement, rendered?: HTMLAnchorElement) {
   const kind = windowKind(win);
   const item = rendered ?? dockTemplate.content.firstElementChild!.cloneNode(true) as HTMLAnchorElement;
   if (!rendered) {
-    const icons = { library: 'gnome-files', reader: 'text-x-generic', about: 'help-about' };
+    const icons = { library: 'gnome-files', reader: 'text-x-generic', about: 'help-about', music: 'folder-music' };
     item.dataset.dockWindow = kind;
     item.querySelector('img')!.src = `/adwaita/color/${icons[kind]}.svg`;
     dock.append(item);
@@ -138,6 +149,7 @@ function focusWindow(win: HTMLElement, fly = false) {
     return;
   }
   if (win === library) libraryRunning = true;
+  if (win === music) spotify.loadListening();
   if (activeWindow !== win || !isVisible(win)) win.style.zIndex = String(++topZ);
   win.setAttribute('data-visible', '');
   activeWindow = win;
@@ -484,6 +496,7 @@ root.addEventListener('click', (event) => {
     return;
   }
   if (anchor.hasAttribute('data-open-about')) { event.preventDefault(); activateWindow(about); return; }
+  if (anchor.hasAttribute('data-open-music')) { event.preventDefault(); activateWindow(music); return; }
   if (anchor.hasAttribute('data-open-library')) {
     event.preventDefault();
     if (mobileLayout.matches && anchor.hasAttribute('data-app-back')) setFilter(currentFilter, currentValue, true, libraryUrl);
@@ -528,14 +541,16 @@ document.addEventListener('keydown', (event) => {
 });
 window.addEventListener('popstate', () => {
   const filter = pathFilter();
+  const path = location.pathname.replace(/\/+$/, '');
   articleRequest++;
   if (filter) {
     libraryUrl = location.pathname + location.search;
     setFilter(filter.kind, filter.value);
   }
-  else if (location.pathname.replace(/\/+$/, '') === '/about') {
-    focusWindow(about);
-    document.title = blogTitle(windowTitle(about));
+  else if (path === '/about' || path === '/music') {
+    const win = path === '/music' ? music : about;
+    focusWindow(win);
+    document.title = blogTitle(windowTitle(win));
   }
   else if (location.pathname.startsWith('/blog/')) void openArticle(location.href, false);
 });
@@ -635,7 +650,8 @@ function updateClock() {
   }).format(new Date());
 }
 const updateCalendar = initCalendar();
-const updateSpotifyLanguage = initSpotify(t);
+const listeningWindow = initListeningWindow(music, t);
+const spotify = initSpotify(t, mobileLayout, listeningWindow.render);
 setInterval(updateClock, 30_000);
 
 function applyLanguage(next: Language) {
@@ -658,7 +674,8 @@ function applyLanguage(next: Language) {
   filterPosts();
   updateClock();
   updateCalendar(document.documentElement.lang);
-  updateSpotifyLanguage();
+  spotify.updateLanguage();
+  listeningWindow.updateLabels();
   if (activeWindow && isVisible(activeWindow)) {
     activeTitle.textContent = windowTitle(activeWindow);
     document.title = blogTitle(windowTitle(activeWindow));
@@ -673,11 +690,14 @@ document.querySelectorAll<HTMLButtonElement>('[data-set-language]').forEach((but
   changeLanguage(button.dataset.setLanguage as Language);
   dismissDisclosure(true);
 }));
-document.querySelectorAll<HTMLButtonElement>('[data-copy-email]').forEach((control) => control.addEventListener('click', (event) => {
+document.querySelectorAll<HTMLButtonElement>('[data-copy-value]').forEach((control) => control.addEventListener('click', (event) => {
   const button = event.currentTarget as HTMLButtonElement;
-  navigator.clipboard.writeText(button.dataset.copyEmail!)
-    .then(() => announce(t('emailCopied')))
-    .catch(() => announce(t('copyEmailFailed')));
+  const { copyValue, copySuccessZh, copySuccessEn, copyFailureZh, copyFailureEn } = button.dataset;
+  const success = language === 'zh' ? copySuccessZh : copySuccessEn;
+  const failure = language === 'zh' ? copyFailureZh : copyFailureEn;
+  navigator.clipboard.writeText(copyValue!)
+    .then(() => announce(success ?? t('copied')))
+    .catch(() => announce(failure ?? t('copyValueFailed')));
   dismissDisclosure(true);
 }));
 function copyArticleLink(reader: HTMLElement, control: HTMLElement) {
@@ -707,6 +727,7 @@ document.querySelectorAll<HTMLButtonElement>('[data-quick-action]').forEach((but
 
 prepareWindow(library);
 prepareWindow(about);
+prepareWindow(music);
 dockItemFor(library, dock.querySelector<HTMLAnchorElement>('[data-dock-window="library"]')!);
 setFilter(currentFilter, currentValue);
 if (initialReader) {
@@ -718,6 +739,9 @@ if (initialReader) {
 } else if (initialKind === 'about') {
   dockItemFor(about, dock.querySelector<HTMLAnchorElement>('[data-dock-window="about"]')!);
   focusWindow(about);
+} else if (initialKind === 'music') {
+  dockItemFor(music, dock.querySelector<HTMLAnchorElement>('[data-dock-window="music"]')!);
+  focusWindow(music);
 }
 applyLanguage(language);
 if (initialReader) scrollToArticleAnchor(initialReader, location.hash);

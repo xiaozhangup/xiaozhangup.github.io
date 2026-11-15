@@ -2,9 +2,11 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import { Icon } from 'astro-icon/components';
 import { SITE_TITLE } from '@/config';
+import { labelPair, shortcuts } from '@/desktopLinks';
 import AdwIcon from '@/components/desktop/AdwIcon.astro';
 import ShellBar from '@/components/desktop/ShellBar.astro';
 import ReaderWindow from '@/components/desktop/ReaderWindow.astro';
+import MusicWindow from '@/components/desktop/MusicWindow.astro';
 import DockWindow from '@/components/desktop/DockWindow.astro';
 import WindowControls from '@/components/desktop/WindowControls.astro';
 import WindowResizeAreas from '@/components/desktop/WindowResizeAreas.astro';
@@ -13,12 +15,13 @@ import '@/styles/desktop.css';
 import '@/styles/shell.css';
 import '@/styles/motion.css';
 import '@/styles/mobile.css';
+import '@/styles/listening.css';
 import 'katex/dist/katex.min.css';
 
 interface Props {
   title?: string;
   description?: string;
-  initialWindow?: 'library' | 'reader' | 'about';
+  initialWindow?: 'library' | 'reader' | 'about' | 'music';
   initialFilter?: 'all' | 'categories' | 'tags' | 'archives' | 'search' | 'category' | 'tag';
   filterValue?: string;
   article?: CollectionEntry<'blog'>;
@@ -70,6 +73,7 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
         <nav class="dock" id="desktop-dock" data-i18n-aria="desktopApps" aria-label="桌面应用">
           <DockWindow kind="library" label="文章" href="/blog/" active={initialWindow === 'library'} />
           {initialWindow === 'reader' && <DockWindow kind="reader" label={title} href={Astro.url.pathname} active />}
+          {initialWindow === 'music' && <DockWindow kind="music" label="音乐" href="/music/" active />}
           {initialWindow === 'about' && <DockWindow kind="about" label="关于博客" href="/about/" active />}
         </nav>
       </div>
@@ -81,9 +85,18 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
         <button type="button" class="desktop-shortcut desktop-trash" data-desktop-trash aria-describedby="desktop-trash-help">
           <img src="/adwaita/color/user-trash.svg" alt="" /><span data-i18n="trash">回收站</span>
         </button>
+        {shortcuts.map((item) => {
+          const label = labelPair(item.label);
+          return (
+            <a href={item.href} target={item.newTab === false ? undefined : "_blank"} rel={item.newTab === false ? undefined : "noopener noreferrer"} class="desktop-shortcut" data-shortcut-side="left" aria-describedby="desktop-shortcut-help">
+              <img src={item.icon} alt="" /><span data-label-zh={label.zh} data-label-en={label.en}>{label.zh}</span>
+            </a>
+          );
+        })}
         <a href="/blog/" data-open-library class="desktop-shortcut" aria-describedby="desktop-shortcut-help"><img src="/adwaita/color/folder-documents.svg" alt="" /><span data-i18n="posts">文章</span></a>
         <a href="/blog/archives/" data-desktop-filter="archives" class="desktop-shortcut" aria-describedby="desktop-shortcut-help"><img src="/adwaita/color/folder-projects.svg" alt="" /><span data-i18n="archives">归档</span></a>
         <a href="/about/" data-open-about class="desktop-shortcut" aria-describedby="desktop-shortcut-help"><img src="/adwaita/color/help-about.svg" alt="" /><span data-i18n="aboutShort">关于</span></a>
+        <a href="/music/" data-open-music class="desktop-shortcut" aria-describedby="desktop-shortcut-help"><img src="/adwaita/color/folder-music.svg" alt="" /><span data-i18n="music">音乐</span></a>
       </div>
 
       <section class="window window--library" data-window="library" data-visible data-active={initialWindow === 'library' ? '' : undefined} aria-label="文章">
@@ -218,6 +231,7 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
         </div>
         <WindowResizeAreas />
       </section>
+      <MusicWindow active={initialWindow === 'music'} />
       <div class="visually-hidden" aria-live="polite" data-announcer></div>
     </main>
     <script src="../desktop/desktop.ts"></script>

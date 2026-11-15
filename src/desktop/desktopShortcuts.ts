@@ -32,7 +32,15 @@ export function initDesktopShortcuts(grid: HTMLElement, announce: (label: string
   }
   let frame = layout();
   const cells = new Map<HTMLElement, Cell>([[trash, { column: frame.lastColumn, row: 0 }]]);
-  shortcuts.forEach((tile, row) => cells.set(tile, { column: 0, row }));
+  let leftIndex = 1;
+  let rightIndex = 0;
+  const rows = frame.lastRow + 1;
+  for (const tile of shortcuts) {
+    const onLeft = tile.dataset.shortcutSide === 'left';
+    const index = onLeft ? leftIndex++ : rightIndex++;
+    const column = Math.floor(index / rows);
+    cells.set(tile, bounded({ column: onLeft ? frame.lastColumn - column : column, row: index % rows }));
+  }
   for (const [tile, cell] of cells) place(tile, cell);
 
   function cellLeft(column: number) {

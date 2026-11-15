@@ -56,6 +56,13 @@ draft: false
 - `public/profile.png`：头像及站点图标。
 - `public/CNAME`：自定义域名。
 
+## 桌面外链和顶栏菜单
+
+- `desktop-shortcuts.yaml` 按顺序放置回收站下方的快捷方式。每项可设置名称、目标地址、图标和是否在新标签页打开。
+- `topbar-contacts.yaml` 的每个 `menus` 项对应顶栏左侧一个按钮。菜单的 `items` 可组合普通链接、`mailto:` 链接和复制动作，并设置图标、双语名称和复制提示。当前 GitHub、邮箱菜单可直接作为示例。设置 `mobile: false` 可让指定菜单仅在桌面出现。
+
+编辑这两份配置并推送到 `main` 后，GitHub Actions 会自动部署。
+
 ## 界面与内容
 
 桌面左侧 Dock 可打开文章、分类、标签、搜索和关于窗口。文章窗口支持关闭、最小化、恢复、最大化和拖动；聚焦窗口标题后可用方向键移动，点击窗口的移动按钮可居中。手机端 Dock 位于底部。文章正文由 Astro 在构建时渲染，全文搜索由 Pagefind 索引生成。
@@ -64,4 +71,4 @@ draft: false
 
 ## Spotify 播放状态
 
-侧栏卡片从 Cloudflare Worker 获取当前播放状态。Worker 源码位于 `workers/spotify/`，生产地址由工作流中的 `PUBLIC_SPOTIFY_ENDPOINT` 配置。Spotify Client Secret 和 Refresh Token 保存在 Worker 的加密密钥中。Spotify 刷新令牌到期后需要重新授权并更新 Worker 密钥。
+桌面顶栏、移动端快捷设置和音乐窗口从 Cloudflare Worker 获取播放状态及收听记录。Worker 源码位于 `workers/spotify/`，生产地址由工作流中的 `PUBLIC_SPOTIFY_ENDPOINT` 配置。Spotify Client Secret 和 Refresh Token 保存在 Worker 的加密密钥中。Spotify 刷新令牌到期后需要重新授权并更新 Worker 密钥。
