@@ -29,9 +29,10 @@
 }
 
 .topbar-end { justify-content: flex-end; }
-.workspace-indicator { display: flex; align-items: center; gap: 5px; margin-inline-end: 8px; }
+.workspace-indicator { display: flex; align-items: center; gap: 5px; height: 24px; padding-inline: 8px; border-radius: 99px; }
+.workspace-indicator:hover { background-color: rgb(255 255 255 / 24%); }
 .workspace-indicator i { width: 5px; height: 5px; border-radius: 50px; background: #94999c; }
-.workspace-indicator i:nth-child(3) { width: 22px; height: 6px; background: #fff; }
+.workspace-indicator .workspace-current { width: 22px; height: 6px; background: #fff; }
 .shell-menu { min-width: 0; }
 .shell-trigger {
   display: flex;
@@ -58,7 +59,13 @@
 }
 .topbar-clock { font-variant-numeric: tabular-nums; line-height: 1; }
 .language-trigger { font-size: 14px; }
-.quick-trigger .adw-icon:last-child { width: 12px; height: 12px; }
+.quick-trigger { gap: 8px; }
+.quick-trigger .adw-icon { width: 14px; height: 14px; }
+.quick-trigger:not([data-offline]) .status-offline,
+.quick-trigger[data-offline] .status-online,
+.topbar:not([data-playing]) .status-playing,
+html[data-theme='light'] .status-dark,
+html:not([data-theme='light']) .status-light { display: none; }
 
 .shell-popover {
   --panel-shift: -5px;
@@ -173,7 +180,8 @@
   color: #9ebecd;
 }
 .music-wave i {
-  width: 1.5px;
+  flex: 0 0 2px;
+  width: 2px;
   height: var(--bar-height);
   border-radius: 2px;
   background: currentColor;
@@ -181,7 +189,6 @@
 }
 .topbar:not([data-playing]) .music-wave { opacity: .45; }
 .music-wave--expanded { gap: 2px; height: 66px; }
-.music-wave--expanded i { width: 2.2px; }
 .music-popover {
   --panel-shift: -10px;
   --panel-scale: .90;
@@ -286,6 +293,8 @@
   .topbar { padding-inline: 5px; font-size: 11px; }
   .topbar-start, .topbar-end { gap: 3px; }
   .shell-trigger { padding-inline: 5px; min-height: 28px; }
+  .quick-trigger { gap: 5px; }
+  .quick-trigger .adw-icon { width: 12px; height: 12px; }
   .workspace-indicator { display: none; }
   .music-menu { flex-basis: 104px; }
   .music-pill { font-size: 11px; gap: 4px; }

@@ -70,8 +70,8 @@ button, a, summary { -webkit-tap-highlight-color: transparent; }
 button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }
 [hidden] { display: none !important; }
 .visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.skip-link { position: fixed; z-index: 1000; top: calc(var(--shell-height) + 6px); left: 12px; padding: 8px 12px; border-radius: 6px; background: var(--window-bg-color); transform: translateY(-180%); }
-.skip-link:focus { transform: none; }
+.skip-link { position: fixed; z-index: 1000; top: 0; left: 12px; padding: 8px 12px; border-radius: 6px; background: var(--window-bg-color); transform: translateY(-100%); }
+.skip-link:focus { transform: translateY(calc(var(--shell-height) + 6px)); }
 .adw-icon { display: inline-block; width: 16px; height: 16px; flex: none; background: currentColor; mask: var(--adw-icon) center / contain no-repeat; }
 
 

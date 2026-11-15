@@ -508,6 +508,18 @@ window.addEventListener('resize', () => {
 
 const themeButton = document.querySelector<HTMLButtonElement>('[data-theme-toggle]')!;
 const motionButton = document.querySelector<HTMLButtonElement>('[data-motion-toggle]')!;
+const systemStatus = document.querySelector<HTMLButtonElement>('[data-system-status]')!;
+const networkStatus = document.getElementById('browser-network-status')!;
+function updateNetworkStatus() {
+  const offline = !navigator.onLine;
+  const key = offline ? 'networkOffline' : 'networkOnline';
+  systemStatus.toggleAttribute('data-offline', offline);
+  networkStatus.dataset.i18n = key;
+  networkStatus.textContent = t(key);
+}
+window.addEventListener('online', updateNetworkStatus);
+window.addEventListener('offline', updateNetworkStatus);
+updateNetworkStatus();
 function applyTheme(theme: string) {
   document.documentElement.dataset.theme = theme;
   themeButton.setAttribute('aria-pressed', String(theme === 'dark'));

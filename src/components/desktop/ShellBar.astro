@@ -8,7 +8,7 @@ const email = 'xiaozhangshiw@163.com';
 ---
 <header class="topbar" data-spotify-endpoint={endpoint}>
   <div class="topbar-start">
-    <span class="workspace-indicator" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+    <span class="workspace-indicator" aria-hidden="true"><i class="workspace-current"></i><i></i></span>
 
     <div class="shell-menu" data-disclosure data-align="start">
       <button type="button" class="shell-trigger shell-contact" data-disclosure-trigger aria-controls="github-menu" aria-expanded="false">GitHub</button>
@@ -110,7 +110,15 @@ const email = 'xiaozhangshiw@163.com';
       </div>
     </div>
     <div class="shell-menu" data-disclosure data-align="end">
-      <button type="button" class="shell-trigger quick-trigger" data-disclosure-trigger aria-controls="quick-settings" aria-expanded="false" data-i18n-aria="quickSettings" aria-label="快捷设置"><AdwIcon name="preferences-system" /><AdwIcon name="pan-down" /></button>
+      <button type="button" class="shell-trigger quick-trigger" data-system-status data-disclosure-trigger aria-controls="quick-settings" aria-expanded="false" aria-describedby="browser-network-status" data-i18n-aria="quickSettings" aria-label="快捷设置">
+        <AdwIcon name="network-workgroup" class="status-online" />
+        <AdwIcon name="network-offline" class="status-offline" />
+        {endpoint && <AdwIcon name="audio-volume-high" class="status-playing" />}
+        <AdwIcon name="weather-clear-night" class="status-dark" />
+        <AdwIcon name="weather-clear" class="status-light" />
+        <AdwIcon name="emblem-system" />
+      </button>
+      <span class="visually-hidden" id="browser-network-status" data-i18n="networkOnline">浏览器已联网</span>
       <div class="disclosure-panel shell-popover quick-popover" id="quick-settings" inert>
         <div class="quick-grid">
           <button type="button" class="quick-action" data-theme-toggle aria-pressed="true"><AdwIcon name="weather-clear-night" /><span data-i18n="darkStyle">暗色样式</span></button>
