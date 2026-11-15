@@ -20,7 +20,7 @@ const exit = name === 'library' ? '/' : '/blog/';
   </div>
 </div>
 {hasMaximize && <>
-  <button type="button" class="window-control" data-minimize aria-label="最小化" title="最小化"><AdwIcon name="window-minimize" /></button>
-  <button type="button" class="window-control" data-maximize aria-pressed="false" aria-label="最大化或还原" title="最大化或还原"><AdwIcon name="window-maximize" class="maximize-icon" /><AdwIcon name="window-restore" class="restore-icon" /></button>
+  <button type="button" class="window-control" data-minimize data-i18n-aria="minimize" aria-label="最小化" title="最小化"><AdwIcon name="window-minimize" /></button>
+  <button type="button" class="window-control" data-maximize data-i18n-aria="maximize" aria-pressed="false" aria-label="最大化或还原" title="最大化或还原"><AdwIcon name="window-maximize" class="maximize-icon" /><AdwIcon name="window-restore" class="restore-icon" /></button>
 </>}
-<a class="window-control" href={exit} data-close-window={name} aria-label="关闭" title="关闭"><AdwIcon name="window-close" /></a>
+<a class="window-control" href={exit} data-close-window={name} data-i18n-aria="close" aria-label="关闭" title="关闭"><AdwIcon name="window-close" /></a>

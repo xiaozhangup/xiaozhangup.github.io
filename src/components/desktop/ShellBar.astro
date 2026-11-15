@@ -39,7 +39,7 @@ const email = 'xiaozhangshiw@163.com';
             <img data-spotify-cover alt="" width="18" height="18" />
           </span>
           <span class="music-pill-label" data-spotify-pill>Spotify</span>
-          <canvas class="pill-wave" data-pill-wave width="18" height="14" aria-hidden="true"></canvas>
+          <MusicWave />
         </button>
 
         <div class="disclosure-panel shell-popover music-popover" id="music-menu" inert>
@@ -54,7 +54,7 @@ const email = 'xiaozhangshiw@163.com';
                 <strong data-spotify-title></strong>
                 <span data-spotify-artist></span>
               </div>
-              <MusicWave />
+              <MusicWave expanded />
             </div>
             <div class="music-footer">
               <div class="music-timeline" data-spotify-timeline hidden>

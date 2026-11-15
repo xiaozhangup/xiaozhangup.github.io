@@ -78,62 +78,65 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
 .desktop { position: fixed; inset: 0; overflow: hidden; isolation: isolate; background: url('/wallpapers/desktop-wide.jpg') center / cover no-repeat #172936; }
 .dock-anchor { position: fixed; z-index: 10000; top: 50%; left: 6px; width: 64px; transform: translateY(-50%); pointer-events: none; }
 .dock { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 5px; width: 100%; border-radius: 18px; background: rgba(18, 18, 20, .9); pointer-events: auto; transition: transform 200ms ease-out, opacity 200ms ease-out; }
-.dock.is-obscured:not(.is-revealed):not(:has(:focus-visible, [data-open])) { transform: translateX(calc(-100% - 8px)); opacity: 0; pointer-events: none; }
+.dock.is-obscured:not(.is-revealed):not(:has(:focus-visible)) { transform: translateX(calc(-100% - 8px)); opacity: 0; pointer-events: none; }
 .dock-edge { position: fixed; z-index: 9999; top: var(--shell-height); bottom: 0; left: 0; width: 12px; padding: 0; border: 0; background: transparent; cursor: pointer; }
 .dock-edge:focus-visible { outline-offset: -2px; }
-.dock-item { border: 0; background: transparent; padding: 0; cursor: pointer; position: relative; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 9px; }
+.dock-item { border: 0; background: transparent; padding: 0; cursor: pointer; position: relative; display: grid; flex: none; place-items: center; width: 48px; height: 48px; border-radius: 9px; }
 .dock-item:hover, .dock-item:focus-visible { background: #ffffff1a; }
 .dock-item.is-active { background: #ffffff1a; }
 .dock-item:active { background: #ffffff36; }
 .dock-item::after { content: attr(data-tooltip); position: absolute; left: 56px; top: 50%; transform: translateY(-50%); padding: 6px 9px; border-radius: 6px; background: #36363a; color: white; box-shadow: 0 3px 8px #0006; font-size: 12px; white-space: nowrap; pointer-events: none; opacity: 0; }
 .dock-item:hover::after, .dock-item:focus-visible::after { opacity: 1; }
-.dock-item[aria-expanded='true']::after { opacity: 0; }
 .dock-app { display: block; width: 42px; height: 42px; object-fit: contain; }
 .dock-dot { position: absolute; left: -5px; width: 4px; height: 4px; border-radius: 50%; background: #fff; }
-.dock-item:not(.is-running) .dock-dot { opacity: 0; }
-.dock-item[data-window-count='2'] .dock-dot { box-shadow: 0 7px #fff; transform: translateY(-3.5px); }
-.dock-app-group { position: relative; }
-.dock-app-group .dock-previews {
-  --panel-shift: 0;
+.dock-anchor:not(:has(.dock-item)) { visibility: hidden; }
+.dock { max-height: calc(100dvh - 2 * var(--shell-height) - 12px); }
+.dock.is-scrollable { overflow-y: auto; scrollbar-width: none; }
+.dock.is-scrollable .dock-item::after { display: none; }
+
+.desktop-icons {
+  --shortcut-width: 78px;
+  --shortcut-height: 76px;
+  --shortcut-gap: 10px;
+  --shortcut-right: 24px;
+  --shortcut-top: 50px;
   position: absolute;
-  inset-inline-start: calc(100% + 16px);
-  width: min(220px, calc(100vw - 84px));
-  padding: 7px;
-  border-radius: 15px;
+  inset: 0;
+  pointer-events: none;
 }
-.dock-preview {
-  display: grid;
-  gap: 6px;
-  width: 100%;
-  padding: 6px;
-  border: 0;
-  border-radius: 9px;
-  background: transparent;
-  text-align: start;
-  cursor: pointer;
-}
-.dock-preview:is(:hover, :focus-visible) { background: rgb(255 255 255 / 12%); }
-.dock-preview:active { background: rgb(255 255 255 / 22%); }
-.dock-preview-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
-.dock-preview-view {
+.desktop-shortcut, .desktop-trash {
+  position: absolute;
+  width: var(--shortcut-width);
+  min-height: var(--shortcut-height);
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  height: 62px;
-  min-width: 0;
-  padding-inline: 8px;
-  border: 1px solid #ffffff14;
-  border-radius: 7px;
-  background: var(--view-bg-color);
-  color: var(--window-fg-color);
-  font-size: 11px;
+  gap: 2px;
+  padding: 5px;
+  color: white;
+  border-radius: 6px;
+  font-size: 12px;
+  text-shadow: 0 1px 4px #000;
+  pointer-events: auto;
+  -webkit-user-select: none;
+  user-select: none;
 }
-.dock-preview-view img { width: 28px; height: 28px; flex: none; object-fit: contain; }
-.dock-preview-view span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.desktop-icons { position: absolute; top: 50px; right: 24px; display: flex; flex-direction: column; gap: 10px; align-items: center; }
-.desktop-shortcut { width: 78px; min-height: 76px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px; color: white; border-radius: 6px; font-size: 12px; text-shadow: 0 1px 4px #000; }
+.desktop-shortcut {
+  top: calc(var(--shortcut-top) + var(--shortcut-row, 0) * (var(--shortcut-height) + var(--shortcut-gap)));
+  right: calc(var(--shortcut-right) + var(--shortcut-column, 0) * (var(--shortcut-width) + var(--shortcut-gap)));
+  touch-action: none;
+  cursor: grab;
+}
+.desktop-shortcut:nth-of-type(2) { --shortcut-row: 1; }
+.desktop-shortcut:nth-of-type(3) { --shortcut-row: 2; }
 .desktop-shortcut:hover { background: #ffffff18; }
-.desktop-shortcut img { width: 48px; height: 48px; object-fit: contain; }
+.desktop-shortcut.is-dragging { background: #ffffff24; opacity: .55; cursor: grabbing; }
+.desktop-trash { left: 6px; top: var(--shortcut-top); width: 64px; transition: background-color 150ms ease; }
+.desktop-trash.is-drop-target { background-color: #ffffff36; }
+.desktop-shortcut img, .desktop-trash img, .desktop-drag-icon { width: 48px; height: 48px; object-fit: contain; }
+.desktop-drag-icon, .desktop-drop-target { position: fixed; inset: 0 auto auto 0; pointer-events: none; }
+.desktop-drag-icon { z-index: 10012; filter: drop-shadow(0 3px 4px #0006); }
+.desktop-drop-target { z-index: 10011; width: 78px; height: 76px; border-radius: 6px; background: #ffffff18; }
 
 /* Header bar and window controls follow libadwaita's 47px header, 34px buttons and 24px control circles. */
 .window {

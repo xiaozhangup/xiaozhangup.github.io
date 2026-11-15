@@ -159,9 +159,6 @@ html[data-theme='light'] .music-menu {
   cursor: pointer;
 }
 .music-pill:hover, .music-pill[aria-expanded='true'] { background: var(--music-bg); border-color: color-mix(in srgb, var(--music-muted) 60%, transparent); }
-.pill-wave { display: block; flex: none; width: 18px; height: 14px; opacity: .66; image-rendering: pixelated; }
-.topbar:not([data-playing]) .pill-wave { opacity: .34; }
-html[data-theme='light'] .pill-wave { filter: invert(1); }
 .music-pill-label { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
 .music-symbol, .music-cover {
   position: relative;
@@ -185,23 +182,15 @@ html[data-theme='light'] .pill-wave { filter: invert(1); }
 .music-cover { width: 84px; aspect-ratio: 1; border-radius: 11px; background: rgb(255 255 255 / 8%); }
 
 .music-wave {
+  display: block;
   flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  height: 14px;
-  color: var(--music-muted);
+  width: var(--wave-width);
+  height: var(--wave-height);
+  color: var(--wave-dark, #8c8c8c);
+  image-rendering: pixelated;
 }
-.music-wave i {
-  flex: 0 0 2px;
-  width: 2px;
-  height: var(--bar-height);
-  border-radius: 2px;
-  background: currentColor;
-  transform: scaleY(.64);
-}
-.topbar:not([data-playing]) .music-wave { opacity: .45; }
-.music-wave--expanded { gap: 2px; height: 66px; }
+html[data-theme='light'] .music-wave { color: var(--wave-light, #414146); }
+.topbar:not([data-playing]) .music-wave { opacity: .4; }
 .music-popover {
   --panel-shift: -10px;
   --panel-scale: .90;
@@ -289,21 +278,6 @@ html[data-theme='light'] .pill-wave { filter: invert(1); }
 .calendar-grid span { display: grid; place-items: center; margin: auto; width: 100%; max-width: 30px; aspect-ratio: 1; border-radius: 50%; }
 .calendar-grid .day-name, .calendar-grid .other-month { color: rgb(255 255 255 / 52%); }
 .calendar-grid [aria-current='date'] { background: var(--shell-accent); }
-
-@media (prefers-reduced-motion: no-preference) {
-  html:not([data-motion='off']) .topbar[data-playing] .music-menu[data-open] .music-wave--expanded i {
-    animation: music-wave var(--bar-pace) var(--bar-phase) infinite both;
-  }
-}
-@keyframes music-wave {
-  0%, 100% { transform: scaleY(.67); animation-timing-function: cubic-bezier(.42, 0, .6, 1); }
-  13% { transform: scaleY(.96); }
-  32% { transform: scaleY(var(--bar-low)); }
-  47% { transform: scaleY(.81); }
-  54% { transform: scaleY(.92); }
-  73% { transform: scaleY(.52); }
-  84% { transform: scaleY(.73); }
-}
 
 @media (max-width: 760px) {
   .topbar { font-size: 11px; }

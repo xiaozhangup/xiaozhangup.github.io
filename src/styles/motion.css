@@ -55,7 +55,7 @@
 
 .window-control::before,
 :is(.shell-trigger, .workspace-indicator, .music-pill, .shell-list-row, .quick-action, .spotify-open, .calendar-nav button,
-    .dock-item, .dock-preview, .desktop-shortcut, .toolbar-icon, .window-menu-popover button,
+    .dock-item, .desktop-shortcut, .toolbar-icon, .window-menu-popover button,
     .side-link, .post-row, .folder-item, .about-links a, .article-meta a,
     .window-header, .reader-scroll, .window-location) {
   transition: background-color var(--control-duration) ease-out, color var(--control-duration) ease-out, border-color var(--control-duration) ease-out;

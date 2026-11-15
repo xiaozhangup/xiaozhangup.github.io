@@ -1,8 +1,9 @@
 ---
-const heights = [46, 66, 54, 30, 55, 65, 48, 30, 39, 66];
+interface Props { expanded?: boolean }
+const { expanded = false } = Astro.props;
+const bars = expanded ? 10 : 5;
+const stroke = expanded ? 3 : 2;
+const width = bars * (stroke + 2) - 2;
+const height = expanded ? 80 : 16;
 ---
-<span class="music-wave music-wave--expanded" aria-hidden="true">
-  {heights.map((height, i) => (
-    <i style={`--bar-height:${height}px; --bar-pace:${1580 + (i * 227) % 860}ms; --bar-phase:-${(i * 419) % 2100}ms; --bar-low:${.28 + (i % 4) * .08}`}></i>
-  ))}
-</span>
+<canvas class:list={['music-wave', !expanded && 'pill-wave']} data-music-wave={bars} data-wave-stroke={stroke} width={width} height={height} style={`--wave-width:${width}px;--wave-height:${height}px`} aria-hidden="true"></canvas>

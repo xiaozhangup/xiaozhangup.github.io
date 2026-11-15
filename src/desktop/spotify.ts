@@ -1,4 +1,4 @@
-import { coverColor, initPillWave } from './musicVisuals';
+import { coverColor, initMusicWaves } from './musicVisuals';
 
 type Playback = {
   playing: true;
@@ -22,7 +22,7 @@ export function initSpotify(t: (key: string) => string) {
   const pill = bar.querySelector<HTMLElement>('[data-spotify-pill]')!;
   const coverImages = Array.from(bar.querySelectorAll<HTMLImageElement>('[data-spotify-cover]'));
   const panel = bar.querySelector<HTMLElement>('.music-menu')!;
-  const setWavePlaying = initPillWave(panel.querySelector<HTMLCanvasElement>('[data-pill-wave]')!);
+  const setWavePlaying = initMusicWaves(panel);
   const timeline = panel.querySelector<HTMLElement>('[data-spotify-timeline]')!;
   const progress = panel.querySelector<HTMLElement>('[data-spotify-progress]')!;
   const elapsed = panel.querySelector<HTMLElement>('[data-spotify-elapsed]')!;
@@ -44,12 +44,16 @@ export function initSpotify(t: (key: string) => string) {
   function updateCoverColor(url: string | undefined) {
     if (url === currentCover) return;
     currentCover = url;
-    if (!url) {
-      panel.style.removeProperty('--track-color');
-      return;
+    function applyColor(rgb: number[] | null) {
+      const css = (values: number[]) => `rgb(${values.join(' ')})`;
+      panel.style.setProperty('--track-color', rgb ? css(rgb) : '');
+      panel.style.setProperty('--wave-dark', rgb ? css(rgb.map((value) => Math.min(255, value + 100))) : '');
+      panel.style.setProperty('--wave-light', rgb ? css(rgb.map((value) => Math.max(25, Math.min(135, Math.floor(value * .55))))) : '');
+      setWavePlaying(playback.playing);
     }
-    void coverColor(url).catch(() => '').then((color) => {
-      if (currentCover === url) panel.style.setProperty('--track-color', color);
+    if (!url) applyColor(null);
+    else void coverColor(url).catch(() => null).then((rgb) => {
+      if (currentCover === url) applyColor(rgb);
     });
   }
   function renderText() {

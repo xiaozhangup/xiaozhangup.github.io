@@ -11,14 +11,6 @@ function positionPanel(owner: HTMLElement) {
   if (!owner.dataset.align) return;
 
   const rect = trigger.getBoundingClientRect();
-  if (owner.dataset.align === 'side') {
-    const topbar = document.querySelector<HTMLElement>('.topbar')!.offsetHeight;
-    const desired = rect.top + (rect.height - panel.offsetHeight) / 2;
-    const top = Math.max(topbar + 6, Math.min(desired, document.documentElement.clientHeight - panel.offsetHeight - 6));
-    panel.style.top = `${top - rect.top}px`;
-    panel.style.transformOrigin = `left ${rect.top + rect.height / 2 - top}px`;
-    return;
-  }
   const width = panel.offsetWidth;
   const center = rect.left + rect.width / 2;
   const anchor = owner.dataset.align === 'center' ? center - width / 2
@@ -42,7 +34,7 @@ export function dismissDisclosure(restoreFocus = false) {
   return true;
 }
 
-export function openDisclosure(owner: HTMLElement) {
+function openDisclosure(owner: HTMLElement) {
   dismissDisclosure();
   const { trigger, panel } = controls(owner);
   positionPanel(owner);

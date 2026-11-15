@@ -1,17 +1,22 @@
-import { dismissDisclosure, initDisclosures, openDisclosure } from './disclosures';
+import { dismissDisclosure, initDisclosures } from './disclosures';
+import { initDesktopShortcuts } from './desktopShortcuts';
 import { messages, type Language } from './i18n';
 import { initCalendar } from './shellCalendar';
 import { initSpotify } from './spotify';
 import { animateDockFlight, animateWindowChange, beginKeyboardResize, bindWindowGeometry, fitWindow, windowBox } from './windowGeometry';
 
 type FilterKind = 'all' | 'categories' | 'tags' | 'archives' | 'search' | 'category' | 'tag';
-type WindowName = 'library' | 'reader' | 'about';
+type WindowKind = 'library' | 'reader' | 'about';
 
 const root = document.querySelector<HTMLElement>('.desktop')!;
-const windows = Object.fromEntries(
-  Array.from(document.querySelectorAll<HTMLElement>('[data-window]')).map((item) => [item.dataset.window!, item]),
-) as Record<WindowName, HTMLElement>;
-const readerContent = document.querySelector<HTMLElement>('[data-reader-content]')!;
+const library = root.querySelector<HTMLElement>('[data-window="library"]')!;
+const about = root.querySelector<HTMLElement>('[data-window="about"]')!;
+const initialReader = root.querySelector<HTMLElement>('[data-window="reader"]');
+const readerTemplate = root.querySelector<HTMLTemplateElement>('[data-reader-template]')!;
+const dockTemplate = root.querySelector<HTMLTemplateElement>('[data-dock-template]')!;
+const readers = new Map<string, HTMLElement>();
+const pendingReaders = new Map<string, Promise<HTMLElement>>();
+const dockItems = new Map<HTMLElement, HTMLAnchorElement>();
 const searchForm = document.querySelector<HTMLFormElement>('[data-search-form]')!;
 const libraryPath = document.querySelector<HTMLElement>('[data-library-path]')!;
 const searchButton = document.querySelector<HTMLButtonElement>('[data-focus-search]')!;
@@ -27,11 +32,6 @@ const announcer = document.querySelector<HTMLElement>('[data-announcer]')!;
 const activeTitle = document.querySelector<HTMLElement>('[data-active-title]')!;
 const postRows = Array.from(document.querySelectorAll<HTMLElement>('[data-post-row]'));
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-const libraryDock = document.querySelector<HTMLAnchorElement>('[data-dock-app="library"]')!;
-const libraryIcon = libraryDock.querySelector<HTMLImageElement>('img')!;
-const profileIcon = document.querySelector<HTMLElement>('.status-profile')!;
-const previewGroup = libraryDock.closest<HTMLElement>('[data-disclosure]')!;
-const previewCards = Array.from(previewGroup.querySelectorAll<HTMLButtonElement>('[data-preview-window]'));
 const sidebarToggle = document.querySelector<HTMLButtonElement>('[data-toggle-sidebar]')!;
 const sidebar = document.querySelector<HTMLElement>('.library-sidebar')!;
 const dock = document.querySelector<HTMLElement>('.dock')!;
@@ -42,13 +42,12 @@ let searchVersion = 0;
 let searchTimer: ReturnType<typeof setTimeout> | undefined;
 let pagefind: Promise<any> | undefined;
 let topZ = 30;
-const initialWindow = document.body.dataset.initialWindow as WindowName || 'library';
-const runningWindows = new Set<WindowName>(['library', initialWindow]);
-const articleWindows: WindowName[] = ['library', 'reader'];
-let activeWindow: WindowName = initialWindow;
+const initialKind = document.body.dataset.initialWindow as WindowKind;
+let activeWindow: HTMLElement | null = null;
+let readerNumber = 0;
 let currentFilter: FilterKind = document.body.dataset.initialFilter as FilterKind || 'all';
 let currentValue = document.body.dataset.filterValue || '';
-let libraryUrl = initialWindow === 'library' ? location.pathname + location.search : '/blog/';
+let libraryUrl = initialKind === 'library' ? location.pathname + location.search : '/blog/';
 let articleRequest = 0;
 let language: Language = 'zh';
 try { if (localStorage.getItem('desktop-language') === 'en') language = 'en'; } catch { /* Use Chinese when storage is unavailable. */ }
@@ -69,15 +68,13 @@ function updateDates(scope: ParentNode = document) {
   const formatter = new Intl.DateTimeFormat(language === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Shanghai' });
   scope.querySelectorAll<HTMLTimeElement>('time[datetime]').forEach((el) => { el.textContent = formatter.format(new Date(el.dateTime)); });
 }
-function applyArticleLanguage() {
-  const variants = Array.from(readerContent.querySelectorAll<HTMLElement>('[data-article-language]'));
+function applyArticleLanguage(reader: HTMLElement) {
+  const variants = Array.from(reader.querySelectorAll<HTMLElement>('[data-article-language]'));
   const selected = language === 'en' && variants.some((item) => item.dataset.articleLanguage === 'en') ? 'en' : 'zh';
   variants.forEach((item) => { item.hidden = item.dataset.articleLanguage !== selected; });
-  translateStatic(readerContent);
-  updateDates(readerContent);
 }
-function visibleReaderHeading() {
-  return readerContent.querySelector<HTMLElement>('[data-article-language]:not([hidden]) h1') || readerContent.querySelector<HTMLElement>('h1');
+function visibleReaderHeading(reader: HTMLElement) {
+  return reader.querySelector<HTMLElement>('[data-article-language]:not([hidden]) h1') || reader.querySelector<HTMLElement>('h1');
 }
 function updateLibraryLabels() {
   const titles: Record<FilterKind, string> = { all: t('allPosts'), categories: t('categories'), tags: t('tags'), archives: t('archives'), search: t('search'), category: currentValue, tag: currentValue };
@@ -87,15 +84,41 @@ function updateLibraryLabels() {
 
 function announce(message: string) { announcer.textContent = message; }
 const isVisible = (win: HTMLElement) => win.hasAttribute('data-visible');
+function windowKind(win: HTMLElement) { return win.dataset.window as WindowKind; }
+function windowRoute(win: HTMLElement) {
+  return win === library ? libraryUrl : win === about ? '/about/' : win.dataset.articleUrl!;
+}
+function windowTitle(win: HTMLElement) {
+  return win === library ? heading.textContent! : win === about ? t('aboutShort') : visibleReaderHeading(win)?.textContent?.trim() || t('reader');
+}
+function updateDockItem(win: HTMLElement, item: HTMLAnchorElement) {
+  const title = win === library ? t('library') : windowTitle(win);
+  item.href = windowRoute(win);
+  item.dataset.tooltip = title;
+  item.setAttribute('aria-label', title);
+  item.classList.toggle('is-active', win === activeWindow && isVisible(win));
+}
+function dockItemFor(win: HTMLElement, rendered?: HTMLAnchorElement) {
+  const current = dockItems.get(win);
+  if (current) return current;
+  const kind = windowKind(win);
+  const item = rendered ?? dockTemplate.content.firstElementChild!.cloneNode(true) as HTMLAnchorElement;
+  if (!rendered) {
+    const icons = { library: 'gnome-files', reader: 'text-x-generic', about: 'avatar-default' };
+    item.dataset.dockWindow = kind;
+    item.querySelector('img')!.src = `/adwaita/color/${icons[kind]}.svg`;
+    dock.append(item);
+  }
+  dockItems.set(win, item);
+  updateDockItem(win, item);
+  return item;
+}
 function syncDockApps() {
-  const count = articleWindows.filter((name) => runningWindows.has(name)).length;
-  libraryDock.dataset.windowCount = String(count);
-  libraryDock.classList.toggle('is-running', count > 0);
-  libraryDock.classList.toggle('is-active', isVisible(windows[activeWindow]) && articleWindows.includes(activeWindow));
+  for (const [win, item] of dockItems) updateDockItem(win, item);
 }
 function syncWindowAccess() {
-  for (const [name, win] of Object.entries(windows)) {
-    win.inert = !isVisible(win) || (mobileLayout.matches && name !== activeWindow);
+  for (const win of dockItems.keys()) {
+    win.inert = !isVisible(win) || (mobileLayout.matches && win !== activeWindow);
   }
 }
 function hideWindow(win: HTMLElement) {
@@ -104,23 +127,22 @@ function hideWindow(win: HTMLElement) {
   win.inert = true;
   syncDockApps();
 }
-function focusWindow(name: WindowName, origin?: HTMLElement) {
-  const win = windows[name];
-  if (origin && !isVisible(win)) {
-    animateDockFlight(win, origin, true, () => focusWindow(name));
+function focusWindow(win: HTMLElement, fly = false) {
+  const item = dockItemFor(win);
+  if (fly && !isVisible(win)) {
+    flyToWindow(win, item, true, () => focusWindow(win));
     return;
   }
-  if (!win.hasAttribute('data-active') || !isVisible(win)) win.style.zIndex = String(++topZ);
+  if (activeWindow !== win || !isVisible(win)) win.style.zIndex = String(++topZ);
   win.setAttribute('data-visible', '');
-  activeWindow = name;
-  runningWindows.add(name);
-  for (const [key, other] of Object.entries(windows)) other.toggleAttribute('data-active', key === name);
+  activeWindow = win;
+  for (const other of dockItems.keys()) other.toggleAttribute('data-active', other === win);
   syncWindowAccess();
   syncDockApps();
-  activeTitle.textContent = t(name === 'library' ? 'posts' : name === 'reader' ? 'reader' : 'aboutShort');
+  activeTitle.textContent = windowTitle(win);
 }
 function pushUrl(url: string) {
-  if (location.pathname + location.search !== url) history.pushState({}, '', url);
+  if (location.pathname + location.search + location.hash !== url) history.pushState({}, '', url);
 }
 function setSearchVisible(open: boolean) {
   searchForm.hidden = !open;
@@ -128,8 +150,9 @@ function setSearchVisible(open: boolean) {
   searchButton.setAttribute('aria-expanded', String(open));
 }
 function showSearch() {
-  focusWindow('library');
-  windows.library.classList.remove('sidebar-open');
+  articleRequest++;
+  focusWindow(library, true);
+  library.classList.remove('sidebar-open');
   syncSidebar();
   setSearchVisible(true);
   searchInput.focus();
@@ -141,10 +164,11 @@ function hideSearch() {
     setSearchVisible(false);
     filterPosts();
   }
-  const trigger = searchButton.offsetWidth ? searchButton : windows.library.querySelector<HTMLButtonElement>('[data-disclosure-trigger]')!;
+  const trigger = searchButton.offsetWidth ? searchButton : library.querySelector<HTMLButtonElement>('[data-disclosure-trigger]')!;
   trigger.focus();
 }
-function setFilter(kind: FilterKind, value = '', updateUrl = false, url = '/blog/', origin?: HTMLElement) {
+function setFilter(kind: FilterKind, value = '', updateUrl = false, url = '/blog/') {
+  articleRequest++;
   currentFilter = kind;
   currentValue = value;
   if (updateUrl) {
@@ -165,7 +189,7 @@ function setFilter(kind: FilterKind, value = '', updateUrl = false, url = '/blog
     if (selected) link.setAttribute('aria-current', 'page'); else link.removeAttribute('aria-current');
   });
   filterPosts();
-  focusWindow('library', origin);
+  focusWindow(library, updateUrl);
   if (updateUrl && kind !== 'search') heading.focus();
 }
 function filterPosts() {
@@ -205,34 +229,81 @@ function filterPosts() {
     } catch { /* Title, description, category and tag search remains available. */ }
   }, 180);
 }
-function syncReaderTitle() {
-  const name = visibleReaderHeading()?.textContent?.trim() || t('posts');
-  windows.reader.querySelector<HTMLElement>('[data-reader-title]')!.textContent = name;
-  document.title = blogTitle(name);
+function syncReaderTitle(reader: HTMLElement) {
+  const name = windowTitle(reader);
+  reader.querySelector<HTMLElement>('[data-reader-title]')!.textContent = name;
+  reader.setAttribute('aria-label', name);
+}
+const articlePath = (path: string) => path.replace(/\/+$/, '') + '/';
+const postPaths = new Set(postRows.map((row) => articlePath(row.querySelector<HTMLAnchorElement>('[data-open-article]')!.pathname)));
+
+async function loadReader(path: string) {
+  const response = await fetch(path);
+  if (!response.ok) throw new Error('Unable to load article');
+  const page = new DOMParser().parseFromString(await response.text(), 'text/html');
+  const article = page.querySelector<HTMLElement>('[data-article-fragment]');
+  if (!article) throw new Error('Article not found');
+  for (const sheet of page.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"][href]')) {
+    const href = new URL(sheet.getAttribute('href')!, response.url).href;
+    if (![...document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')].some((existing) => existing.href === href)) {
+      const copy = sheet.cloneNode(true) as HTMLLinkElement;
+      copy.href = href;
+      document.head.append(copy);
+    }
+  }
+
+  const reader = readerTemplate.content.firstElementChild!.cloneNode(true) as HTMLElement;
+  reader.dataset.articleUrl = path;
+  const menuId = `reader-actions-${++readerNumber}`;
+  reader.querySelector('[data-disclosure-trigger]')!.setAttribute('aria-controls', menuId);
+  reader.querySelector('.window-menu-popover')!.id = menuId;
+  reader.querySelector('[data-reader-content]')!.append(article);
+  root.append(reader);
+  if (!mobileLayout.matches && readers.size) {
+    const offset = readers.size % 5 * 24;
+    reader.style.left = `${reader.offsetLeft + offset}px`;
+    reader.style.top = `${reader.offsetTop + offset}px`;
+    fitWindow(reader);
+  }
+  translateStatic(reader);
+  updateDates(reader);
+  applyArticleLanguage(reader);
+  syncReaderTitle(reader);
+  readers.set(path, reader);
+  prepareWindow(reader);
+  dockItemFor(reader);
+  return reader;
+}
+function getReader(path: string) {
+  const open = readers.get(path);
+  if (open) return Promise.resolve(open);
+  let pending = pendingReaders.get(path);
+  if (!pending) {
+    pending = loadReader(path).finally(() => pendingReaders.delete(path));
+    pendingReaders.set(path, pending);
+  }
+  return pending;
+}
+function scrollToArticleAnchor(reader: HTMLElement, hash: string) {
+  if (!hash) return;
+  let name: string;
+  try { name = decodeURIComponent(hash.slice(1)); } catch { return; }
+  const content = reader.querySelector('[data-article-language]:not([hidden])') ?? reader;
+  const target = [...content.querySelectorAll<HTMLElement>('[id]')].find((element) => element.id === name);
+  target?.scrollIntoView({ block: 'start' });
 }
 async function openArticle(url: string, updateUrl = true) {
   const serial = ++articleRequest;
+  const requested = new URL(url, location.href);
+  const path = articlePath(requested.pathname);
   try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Unable to load article');
-    const html = await response.text();
+    const reader = await getReader(path);
     if (serial !== articleRequest) return;
-    const page = new DOMParser().parseFromString(html, 'text/html');
-    const article = page.querySelector<HTMLElement>('[data-article-fragment]');
-    if (!article) throw new Error('Article not found');
-    page.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"][href]').forEach((sheet) => {
-      if (![...document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')].some((existing) => existing.href === sheet.href)) {
-        document.head.appendChild(sheet.cloneNode(true));
-      }
-    });
-    readerContent.replaceChildren(article);
-    applyArticleLanguage();
-    windows.reader.dataset.articleUrl = new URL(url, location.href).pathname;
-    readerContent.scrollTop = 0;
-    if (updateUrl) pushUrl(new URL(url, location.href).pathname);
-    focusWindow('reader', libraryIcon);
-    syncReaderTitle();
-    visibleReaderHeading()?.focus();
+    focusWindow(reader, true);
+    if (updateUrl) pushUrl(path + requested.search + requested.hash);
+    document.title = blogTitle(windowTitle(reader));
+    visibleReaderHeading(reader)?.focus({ preventScroll: true });
+    scrollToArticleAnchor(reader, requested.hash);
   } catch {
     if (serial === articleRequest) location.href = url;
   }
@@ -250,38 +321,42 @@ function pathFilter(): { kind: FilterKind; value: string } | null {
   if (path === '/' || path === '/blog' || /^\/blog\/\d+$/.test(path)) return { kind: 'all', value: '' };
   return null;
 }
-function closeWindow(name: WindowName) {
-  if (name === 'reader') articleRequest++;
-  runningWindows.delete(name);
-  hideWindow(windows[name]);
-  if (name !== 'library') {
-    focusWindow('library');
-    pushUrl(libraryUrl);
-    document.title = blogTitle(heading.textContent!);
-    heading.focus();
-    return;
+function closeWindow(win: HTMLElement) {
+  articleRequest++;
+  const wasActive = activeWindow === win;
+  dockItems.get(win)!.remove();
+  dockItems.delete(win);
+  if (windowKind(win) === 'reader') {
+    readers.delete(win.dataset.articleUrl!);
+    win.remove();
+  } else hideWindow(win);
+  if (wasActive) {
+    focusNextWindow();
+    if (activeWindow) requestWindowFocus(activeWindow);
+    else root.focus({ preventScroll: true });
   }
-  focusNextWindow();
-  if (!isVisible(windows[activeWindow])) libraryDock.focus();
 }
 
-function mostRecentWindow(names: WindowName[]) {
-  return names.sort((a, b) => Number(getComputedStyle(windows[b]).zIndex) - Number(getComputedStyle(windows[a]).zIndex))[0];
-}
 function focusNextWindow() {
-  const next = mostRecentWindow((Object.keys(windows) as WindowName[]).filter((name) => isVisible(windows[name])));
-  if (next) focusWindow(next);
-  else activeTitle.textContent = t('desktop');
+  const next = [...dockItems.keys()].filter(isVisible)
+    .sort((a, b) => Number(b.style.zIndex) - Number(a.style.zIndex))[0];
+  if (next) {
+    focusWindow(next);
+    history.replaceState(history.state, '', windowRoute(next));
+    document.title = blogTitle(windowTitle(next));
+  } else {
+    activeWindow = null;
+    activeTitle.textContent = t('desktop');
+    document.title = blogTitle(t('desktop'));
+  }
 }
 function syncSidebar() {
-  const library = windows.library;
   const compact = library.classList.contains('is-compact');
   const open = compact ? library.classList.contains('sidebar-open') : !library.classList.contains('sidebar-hidden');
   sidebar.inert = !open;
   sidebarToggle.setAttribute('aria-expanded', String(open));
 }
 function updateSidebarMode() {
-  const library = windows.library;
   const compact = library.clientWidth < 588;
   if (compact !== library.classList.contains('is-compact')) {
     library.classList.toggle('is-compact', compact);
@@ -307,66 +382,41 @@ function centerWindow(win: HTMLElement) {
   });
   announce(t('windowCentered'));
 }
+function flyToWindow(win: HTMLElement, item: HTMLAnchorElement, showing: boolean, update: () => void) {
+  if (dock.scrollHeight > dock.clientHeight) item.scrollIntoView({ block: 'nearest' });
+  animateDockFlight(win, item.querySelector('img')!, showing, update);
+}
 function minimizeWindow(win: HTMLElement) {
-  animateDockFlight(win, win === windows.about ? profileIcon : libraryIcon, false, () => hideWindow(win));
+  const item = dockItems.get(win)!;
+  flyToWindow(win, item, false, () => hideWindow(win));
   focusNextWindow();
-  (win === windows.about ? profileIcon.closest('button')! : libraryDock).focus();
+  item.focus({ preventScroll: true });
 }
-
-function activateDockWindow(name: WindowName) {
-  focusWindow(name, libraryIcon);
-  if (name === 'reader') {
-    pushUrl(windows.reader.dataset.articleUrl!);
-    syncReaderTitle();
-    visibleReaderHeading()?.focus({ preventScroll: true });
-  } else {
-    pushUrl(libraryUrl);
-    document.title = blogTitle(heading.textContent!);
-    windows[name].querySelector<HTMLButtonElement>('[data-drag-handle]')!.focus({ preventScroll: true });
-  }
+function requestWindowFocus(win: HTMLElement) {
+  const target = windowKind(win) === 'reader' ? visibleReaderHeading(win) : win.querySelector<HTMLElement>('[data-drag-handle]');
+  target?.focus({ preventScroll: true });
 }
-function openDockPreviews() {
-  const previewText = {
-    library: [t('library'), heading.textContent],
-    reader: [visibleReaderHeading()?.textContent || t('reader'), readerContent.querySelector('[data-article-language]:not([hidden]) .article-description')?.textContent],
-  } as const;
-  for (const card of previewCards) {
-    const [title, content] = previewText[card.dataset.previewWindow as 'library' | 'reader'];
-    card.querySelector('[data-preview-title]')!.textContent = title;
-    card.querySelector('[data-preview-content]')!.textContent = content || '';
-  }
-  openDisclosure(previewGroup);
-  previewCards.find((card) => card.dataset.previewWindow === activeWindow)!.focus({ preventScroll: true });
+function activateWindow(win: HTMLElement) {
+  articleRequest++;
+  focusWindow(win, true);
+  pushUrl(windowRoute(win));
+  document.title = blogTitle(windowTitle(win));
+  requestWindowFocus(win);
 }
-function activateDockApp() {
-  if (previewGroup.hasAttribute('data-open')) {
-    dismissDisclosure(true);
-    return;
-  }
-  const names = articleWindows.filter((name) => runningWindows.has(name));
-  if (names.includes(activeWindow) && isVisible(windows[activeWindow])) {
-    if (names.length > 1) openDockPreviews();
-    else minimizeWindow(windows[activeWindow]);
-    return;
-  }
-  const visible = names.filter((name) => isVisible(windows[name]));
-  activateDockWindow(mostRecentWindow(visible.length ? visible : names) ?? 'library');
+function prepareWindow(win: HTMLElement) {
+  win.addEventListener('pointerdown', () => focusWindow(win));
+  win.addEventListener('focusin', () => focusWindow(win));
+  bindWindowGeometry(win, () => toggleMaximize(win), (resized) => announce(t(resized ? 'windowResized' : 'windowMoved')));
 }
 
 root.addEventListener('click', (event) => {
   const target = event.target as HTMLElement;
   const close = target.closest<HTMLAnchorElement>('[data-close-window]');
-  if (close) { event.preventDefault(); closeWindow(close.dataset.closeWindow as WindowName); return; }
-  const preview = target.closest<HTMLButtonElement>('[data-preview-window]');
-  if (preview) {
-    dismissDisclosure();
-    activateDockWindow(preview.dataset.previewWindow as WindowName);
-    return;
-  }
+  if (close) { event.preventDefault(); closeWindow(close.closest<HTMLElement>('[data-window]')!); return; }
   const toggleSidebar = target.closest<HTMLButtonElement>('[data-toggle-sidebar]');
   if (toggleSidebar) {
-    const name = windows.library.classList.contains('is-compact') ? 'sidebar-open' : 'sidebar-hidden';
-    windows.library.classList.toggle(name);
+    const name = library.classList.contains('is-compact') ? 'sidebar-open' : 'sidebar-hidden';
+    library.classList.toggle(name);
     syncSidebar();
     return;
   }
@@ -398,35 +448,45 @@ root.addEventListener('click', (event) => {
   const copy = target.closest<HTMLElement>('[data-copy-link]');
   if (copy) {
     if (copy.classList.contains('window-menu-extra')) dismissDisclosure(true);
-    navigator.clipboard.writeText(new URL(windows.reader.dataset.articleUrl || location.pathname, location.origin).href).then(() => { announce(t('linkCopied')); copy.setAttribute('title', t('linkCopied')); }).catch(() => { announce(t('copyFailed')); });
+    const reader = copy.closest<HTMLElement>('[data-window]')!;
+    navigator.clipboard.writeText(new URL(windowRoute(reader), location.origin).href).then(() => { announce(t('linkCopied')); copy.setAttribute('title', t('linkCopied')); }).catch(() => { announce(t('copyFailed')); });
     return;
   }
   const anchor = target.closest<HTMLAnchorElement>('a[href]');
   if (!anchor || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || anchor.target === '_blank' || anchor.hasAttribute('download')) return;
-  if (anchor === libraryDock) {
+  if (anchor.hasAttribute('data-dock-window')) {
     event.preventDefault();
-    activateDockApp();
+    const [win] = [...dockItems].find(([, item]) => item === anchor)!;
+    if (win === activeWindow && isVisible(win)) minimizeWindow(win);
+    else activateWindow(win);
     return;
   }
-  if (anchor.hasAttribute('data-open-article')) { event.preventDefault(); void openArticle(anchor.href); return; }
-  if (anchor.hasAttribute('data-open-about')) { event.preventDefault(); pushUrl('/about/'); focusWindow('about'); document.title = blogTitle(t('aboutShort')); return; }
+  const inReader = anchor.closest<HTMLElement>('[data-window="reader"]');
+  const href = anchor.getAttribute('href')!;
+  if (inReader && href.startsWith('#')) {
+    event.preventDefault();
+    pushUrl(windowRoute(inReader) + href);
+    scrollToArticleAnchor(inReader, href);
+    return;
+  }
+  if (anchor.hasAttribute('data-open-article') || (anchor.origin === location.origin && postPaths.has(articlePath(anchor.pathname)))) {
+    event.preventDefault();
+    void openArticle(anchor.href);
+    return;
+  }
+  if (anchor.hasAttribute('data-open-about')) { event.preventDefault(); activateWindow(about); return; }
   if (anchor.hasAttribute('data-open-library')) { event.preventDefault(); setFilter('all', '', true, '/blog/'); return; }
   if (anchor.dataset.desktopFilter) {
     event.preventDefault();
-    windows.library.classList.remove('sidebar-open');
+    library.classList.remove('sidebar-open');
     syncSidebar();
-    const icon = dock.contains(anchor) ? anchor.querySelector('img')! : undefined;
-    setFilter(anchor.dataset.desktopFilter as FilterKind, anchor.dataset.value || '', true, anchor.pathname, icon);
+    setFilter(anchor.dataset.desktopFilter as FilterKind, anchor.dataset.value || '', true, anchor.pathname);
     if (anchor.dataset.desktopFilter === 'search') searchInput.focus();
   }
 });
-for (const [name, win] of Object.entries(windows)) {
-  win.addEventListener('pointerdown', () => focusWindow(name as WindowName));
-  win.addEventListener('focusin', () => focusWindow(name as WindowName));
-  bindWindowGeometry(win, () => toggleMaximize(win), (resized) => announce(t(resized ? 'windowResized' : 'windowMoved')));
-}
-new ResizeObserver(updateSidebarMode).observe(windows.library);
+new ResizeObserver(updateSidebarMode).observe(library);
 updateSidebarMode();
+initDesktopShortcuts(root.querySelector<HTMLElement>('.desktop-icons')!, (label, action) => announce(`${label} ${t(action)}`));
 initDisclosures();
 searchInput.addEventListener('input', filterPosts);
 searchForm.addEventListener('submit', (event) => {
@@ -450,18 +510,19 @@ document.addEventListener('keydown', (event) => {
     event.preventDefault();
     showSearch();
   }
-  if (event.key === 'Escape' && activeWindow !== 'library' && isVisible(windows[activeWindow])) closeWindow(activeWindow);
+  if (event.key === 'Escape' && activeWindow && activeWindow !== library && isVisible(activeWindow)) closeWindow(activeWindow);
 });
 window.addEventListener('popstate', () => {
   const filter = pathFilter();
   articleRequest++;
   if (filter) {
     libraryUrl = location.pathname + location.search;
-    hideWindow(windows.reader);
-    hideWindow(windows.about);
     setFilter(filter.kind, filter.value);
   }
-  else if (location.pathname.replace(/\/+$/, '') === '/about') { focusWindow('about'); }
+  else if (location.pathname.replace(/\/+$/, '') === '/about') {
+    focusWindow(about);
+    document.title = blogTitle(windowTitle(about));
+  }
   else if (location.pathname.startsWith('/blog/')) void openArticle(location.href, false);
 });
 
@@ -474,8 +535,9 @@ function isDockTarget(target: EventTarget | null) {
   return target instanceof Node && (dock.contains(target) || dockEdge.contains(target));
 }
 function updateDockOverlap() {
+  dock.classList.toggle('is-scrollable', dock.scrollHeight > dock.clientHeight);
   const bounds = dockAnchor.getBoundingClientRect();
-  const obscured = Object.values(windows).some((win) => {
+  const obscured = dockItems.size > 0 && [...dockItems.keys()].some((win) => {
     if (!isVisible(win)) return false;
     const rect = windowBox(win);
     return rect.left < bounds.right && rect.right > bounds.left && rect.top < bounds.bottom && rect.bottom > bounds.top;
@@ -489,8 +551,10 @@ function scheduleDockOverlap() {
   cancelAnimationFrame(dockUpdateFrame);
   dockUpdateFrame = requestAnimationFrame(updateDockOverlap);
 }
-const dockWindowObserver = new MutationObserver(scheduleDockOverlap);
-for (const win of Object.values(windows)) dockWindowObserver.observe(win, { attributes: true, attributeFilter: ['class', 'style', 'data-visible'] });
+const dockWindowObserver = new MutationObserver((records) => {
+  if (records.some(({ target }) => (target as HTMLElement).hasAttribute('data-window'))) scheduleDockOverlap();
+});
+dockWindowObserver.observe(root, { subtree: true, attributes: true, attributeFilter: ['class', 'style', 'data-visible'] });
 new ResizeObserver(scheduleDockOverlap).observe(dockAnchor);
 dockEdge.addEventListener('pointerenter', (event) => { if (event.pointerType !== 'touch' && !dockHoverSuppressed) setDockRevealed(true); });
 function leaveDock(event: PointerEvent) {
@@ -507,7 +571,7 @@ scheduleDockOverlap();
 
 mobileLayout.addEventListener('change', syncWindowAccess);
 window.addEventListener('resize', () => {
-  for (const win of Object.values(windows)) fitWindow(win);
+  for (const win of dockItems.keys()) fitWindow(win);
 });
 
 const themeButton = document.querySelector<HTMLButtonElement>('[data-theme-toggle]')!;
@@ -557,34 +621,22 @@ function applyLanguage(next: Language) {
   document.querySelector<HTMLElement>('[data-language-indicator]')!.textContent = language === 'zh' ? '拼' : 'EN';
   document.querySelectorAll<HTMLButtonElement>('[data-set-language]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.setLanguage === language)));
   document.querySelectorAll<HTMLElement>('[data-post-title], [data-post-description]').forEach((el) => { el.textContent = el.dataset[language]!; });
-  const dockLabels: [string, string][] = [
-    ['[data-dock-app="library"]', 'posts'],
-    ['.dock [data-desktop-filter="categories"]', 'openCategories'], ['.dock [data-desktop-filter="tags"]', 'openTags'],
-  ];
-  for (const [selector, key] of dockLabels) {
-    const item = document.querySelector<HTMLElement>(selector)!;
-    item.setAttribute('aria-label', t(key));
-    item.dataset.tooltip = t(key);
-  }
-  document.querySelectorAll<HTMLElement>('[data-center], [data-minimize], [data-maximize], [data-close-window]').forEach((item) => {
-    const key = item.hasAttribute('data-center') ? 'centerWindow' : item.hasAttribute('data-minimize') ? 'minimize' : item.hasAttribute('data-maximize') ? 'maximize' : 'close';
-    item.setAttribute('aria-label', t(key));
-    if (item.hasAttribute('title')) item.title = t(key);
-  });
-  windows.library.setAttribute('aria-label', t('library'));
-  windows.reader.setAttribute('aria-label', t('reader'));
-  windows.about.setAttribute('aria-label', t('about'));
+  library.setAttribute('aria-label', t('library'));
+  about.setAttribute('aria-label', t('about'));
   updateLibraryLabels();
-  applyArticleLanguage();
+  for (const reader of readers.values()) {
+    applyArticleLanguage(reader);
+    syncReaderTitle(reader);
+  }
+  syncDockApps();
   updateDates();
   filterPosts();
   updateClock();
   updateCalendar(document.documentElement.lang);
   updateSpotifyLanguage();
-  if (isVisible(windows[activeWindow])) {
-    activeTitle.textContent = t(activeWindow === 'library' ? 'posts' : activeWindow === 'reader' ? 'reader' : 'aboutShort');
-    if (activeWindow === 'reader') syncReaderTitle();
-    else document.title = blogTitle(activeWindow === 'about' ? t('aboutShort') : heading.textContent!);
+  if (activeWindow && isVisible(activeWindow)) {
+    activeTitle.textContent = windowTitle(activeWindow);
+    document.title = blogTitle(windowTitle(activeWindow));
   } else activeTitle.textContent = t('desktop');
 }
 document.querySelectorAll<HTMLButtonElement>('[data-set-language]').forEach((button) => button.addEventListener('click', () => {
@@ -602,19 +654,32 @@ document.querySelector<HTMLButtonElement>('[data-copy-email]')!.addEventListener
 document.querySelectorAll<HTMLButtonElement>('[data-quick-action]').forEach((button) => button.addEventListener('click', () => {
   const action = button.dataset.quickAction;
   if (action === 'library') setFilter('all', '', true, '/blog/');
-  else if (action === 'about') { pushUrl('/about/'); focusWindow('about', profileIcon); document.title = blogTitle(t('aboutShort')); }
+  else if (action === 'about') activateWindow(about);
   else {
     articleRequest++;
-    for (const win of Object.values(windows)) {
-      if (isVisible(win)) animateDockFlight(win, win === windows.about ? profileIcon : libraryIcon, false, () => hideWindow(win));
+    for (const [win, item] of dockItems) {
+      if (isVisible(win)) flyToWindow(win, item, false, () => hideWindow(win));
     }
+    activeWindow = null;
     activeTitle.textContent = t('desktop');
     document.title = blogTitle(t('desktop'));
   }
   dismissDisclosure(true);
 }));
 
+prepareWindow(library);
+prepareWindow(about);
+dockItemFor(library, dock.querySelector<HTMLAnchorElement>('[data-dock-window="library"]')!);
 setFilter(currentFilter, currentValue);
-if (initialWindow === 'reader') { focusWindow('reader'); syncReaderTitle(); }
-else if (initialWindow === 'about') { focusWindow('about'); document.title = blogTitle(t('aboutShort')); }
+if (initialReader) {
+  initialReader.dataset.articleUrl = postPaths.has(articlePath(location.pathname)) ? articlePath(location.pathname) : location.pathname;
+  readers.set(initialReader.dataset.articleUrl, initialReader);
+  prepareWindow(initialReader);
+  dockItemFor(initialReader, dock.querySelector<HTMLAnchorElement>('[data-dock-window="reader"]')!);
+  focusWindow(initialReader);
+} else if (initialKind === 'about') {
+  dockItemFor(about, dock.querySelector<HTMLAnchorElement>('[data-dock-window="about"]')!);
+  focusWindow(about);
+}
 applyLanguage(language);
+if (initialReader) scrollToArticleAnchor(initialReader, location.hash);

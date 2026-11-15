@@ -3,6 +3,8 @@ import { getCollection, type CollectionEntry } from 'astro:content';
 import { Icon } from 'astro-icon/components';
 import AdwIcon from '@/components/desktop/AdwIcon.astro';
 import ShellBar from '@/components/desktop/ShellBar.astro';
+import ReaderWindow from '@/components/desktop/ReaderWindow.astro';
+import DockWindow from '@/components/desktop/DockWindow.astro';
 import WindowControls from '@/components/desktop/WindowControls.astro';
 import WindowResizeAreas from '@/components/desktop/WindowResizeAreas.astro';
 import { getAllPosts, sortPostsByPinAndDate, translationKey } from '@utils/blogUtils';
@@ -59,29 +61,22 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
     <main id="desktop-main" class="desktop" tabindex="-1">
       <button type="button" class="dock-edge" data-dock-edge aria-label="显示桌面应用" data-i18n-aria="showDock" aria-controls="desktop-dock" aria-expanded="false" hidden></button>
       <div class="dock-anchor" data-dock-anchor>
-      <nav class="dock" id="desktop-dock" data-i18n-aria="desktopApps" aria-label="桌面应用">
-        <div class="dock-app-group" data-disclosure data-align="side">
-          <a class="dock-item is-running" href="/blog/" data-dock-app="library" data-disclosure-trigger aria-controls="article-windows" aria-expanded="false" data-tooltip="文章" aria-label="文章"><img class="dock-app" src="/adwaita/color/gnome-files.svg" alt="" /><span class="dock-dot"></span></a>
-          <div class="disclosure-panel shell-popover dock-previews" id="article-windows" data-i18n-aria="openWindows" aria-label="已打开的文章窗口" role="group" inert>
-            <button type="button" class="dock-preview" data-preview-window="library">
-              <span class="dock-preview-title" data-preview-title></span>
-              <span class="dock-preview-view" aria-hidden="true"><img src="/adwaita/color/gnome-files.svg" alt="" /><span data-preview-content></span></span>
-            </button>
-            <button type="button" class="dock-preview" data-preview-window="reader">
-              <span class="dock-preview-title" data-preview-title></span>
-              <span class="dock-preview-view" aria-hidden="true"><img src="/adwaita/color/text-x-generic.svg" alt="" /><span data-preview-content></span></span>
-            </button>
-          </div>
-        </div>
-        <a class="dock-item" href="/blog/categories/" data-desktop-filter="categories" data-tooltip="分类" aria-label="打开分类"><img class="dock-app" src="/adwaita/color/folder-projects.svg" alt="" /></a>
-        <a class="dock-item" href="/blog/tags/" data-desktop-filter="tags" data-tooltip="标签" aria-label="打开标签"><img class="dock-app" src="/adwaita/color/user-bookmarks.svg" alt="" /></a>
-      </nav>
+        <nav class="dock" id="desktop-dock" data-i18n-aria="desktopApps" aria-label="桌面应用">
+          <DockWindow kind="library" label="文章管理器" href="/blog/" active={initialWindow === 'library'} />
+          {initialWindow === 'reader' && <DockWindow kind="reader" label={title} href={Astro.url.pathname} active />}
+          {initialWindow === 'about' && <DockWindow kind="about" label="关于博客" href="/about/" active />}
+        </nav>
       </div>
+      <template data-dock-template><DockWindow kind="library" label="" href="/blog/" /></template>
 
+      <p class="visually-hidden" id="desktop-shortcut-help" data-i18n="moveShortcut">可用方向键移动桌面图标，按 Delete 移至回收站。</p>
       <div class="desktop-icons" data-i18n-aria="desktopShortcuts" aria-label="桌面快捷方式">
-        <a href="/blog/" data-open-library class="desktop-shortcut"><img src="/adwaita/color/folder-documents.svg" alt="" /><span data-i18n="posts">文章</span></a>
-        <a href="/blog/archives/" data-desktop-filter="archives" class="desktop-shortcut"><img src="/adwaita/color/folder-projects.svg" alt="" /><span data-i18n="archives">归档</span></a>
-        <a href="/about/" data-open-about class="desktop-shortcut"><img src="/adwaita/color/user-home.svg" alt="" /><span data-i18n="aboutShort">关于</span></a>
+        <div class="desktop-trash" data-desktop-trash>
+          <img src="/adwaita/color/user-trash.svg" alt="" /><span data-i18n="trash">回收站</span>
+        </div>
+        <a href="/blog/" data-open-library class="desktop-shortcut" aria-describedby="desktop-shortcut-help"><img src="/adwaita/color/folder-documents.svg" alt="" /><span data-i18n="posts">文章</span></a>
+        <a href="/blog/archives/" data-desktop-filter="archives" class="desktop-shortcut" aria-describedby="desktop-shortcut-help"><img src="/adwaita/color/folder-projects.svg" alt="" /><span data-i18n="archives">归档</span></a>
+        <a href="/about/" data-open-about class="desktop-shortcut" aria-describedby="desktop-shortcut-help"><img src="/adwaita/color/user-home.svg" alt="" /><span data-i18n="aboutShort">关于</span></a>
       </div>
 
       <section class="window window--library" data-window="library" data-visible data-active={initialWindow === 'library' ? '' : undefined} aria-label="文章管理器">
@@ -180,18 +175,8 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
         <WindowResizeAreas />
       </section>
 
-      <section class="window window--reader" data-window="reader" data-visible={initialWindow === 'reader' ? '' : undefined} data-active={initialWindow === 'reader' ? '' : undefined} inert={initialWindow !== 'reader'} data-article-url={article ? `/blog/${article.id}/` : undefined} aria-label="文章阅读器">
-        <header class="window-header">
-          <div class="window-header-leading"><a href="/blog/" data-open-library class="toolbar-icon" data-i18n-aria="backToPosts" aria-label="返回文章列表" title="返回文章列表"><AdwIcon name="go-previous" /></a></div>
-          <button type="button" class="window-drag" data-drag-handle data-i18n-aria="moveWindow" aria-label="移动窗口，使用方向键调整位置" title="移动窗口，使用方向键调整位置"><span class="window-title" data-reader-title>{article?.data.title ?? '文章'}</span></button>
-          <div class="window-controls">
-            <button type="button" class="toolbar-icon" data-copy-link data-i18n-aria="copyLink" aria-label="复制文章链接" title="复制文章链接"><AdwIcon name="insert-link" /></button>
-            <WindowControls name="reader" />
-          </div>
-        </header>
-        <div class="reader-scroll" data-reader-content><slot name="article" /></div>
-        <WindowResizeAreas />
-      </section>
+      {initialWindow === 'reader' && <ReaderWindow title={title} url={Astro.url.pathname} visible><slot name="article" /></ReaderWindow>}
+      <template data-reader-template><ReaderWindow /></template>
 
       <section class="window window--about" data-window="about" data-visible={initialWindow === 'about' ? '' : undefined} data-active={initialWindow === 'about' ? '' : undefined} inert={initialWindow !== 'about'} aria-label="关于博客">
         <header class="window-header">
