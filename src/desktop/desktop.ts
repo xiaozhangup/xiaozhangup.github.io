@@ -119,7 +119,7 @@ function dockItemFor(win: HTMLElement, rendered?: HTMLAnchorElement) {
   const kind = windowKind(win);
   const item = rendered ?? dockTemplate.content.firstElementChild!.cloneNode(true) as HTMLAnchorElement;
   if (!rendered) {
-    const icons = { library: 'gnome-files', reader: 'text-x-generic', about: 'help-about', music: 'folder-music' };
+    const icons = { library: 'gnome-files', reader: 'text-x-generic', about: 'help-about', music: 'gnome-music' };
     item.dataset.dockWindow = kind;
     item.querySelector('img')!.src = `/adwaita/color/${icons[kind]}.svg`;
     dock.append(item);

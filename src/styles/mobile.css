@@ -234,7 +234,6 @@
   .quick-grid { display: flex; flex-direction: column; gap: 12px; }
 
   .quick-music {
-    --music-status-height: 18px;
     position: relative;
     isolation: isolate;
     display: block;
@@ -247,7 +246,17 @@
     transition: background-color var(--control-duration);
   }
   .quick-music .music-playing { gap: 7px; }
-  .quick-music .music-listening { height: var(--music-status-height); padding-inline-end: 18px; }
+  .quick-music .music-listening { min-height: 18px; }
+  .quick-music .music-listening-label { line-height: 1; white-space: nowrap; }
+  .quick-music .music-listening-label:lang(en) { text-box: trim-both cap alphabetic; }
+  .quick-music .music-listening-label:lang(zh) { text-box: trim-both ideographic-ink; }
+  .quick-music .music-listening-label [data-i18n] { position: relative; }
+  .music-listening-baseline { display: inline-block; width: 0; height: 0; vertical-align: baseline; }
+  .quick-music .music-listening .music-listening-chevron {
+    margin-inline-start: auto;
+    width: 16px;
+    height: 16px;
+  }
   .quick-music .music-main { gap: 10px; }
   .quick-music .music-cover { width: 40px; border-radius: 7px; }
   .quick-music .music-track { gap: 2px; text-align: start; }
@@ -261,13 +270,7 @@
   .quick-music-link {
     position: absolute;
     inset: 0;
-    display: grid;
-    grid-template-rows: var(--music-status-height) 1fr;
-    justify-items: end;
-    align-items: center;
-    padding: 8px 10px;
     border-radius: inherit;
-    color: var(--music-muted);
     transition: background-color var(--control-duration);
   }
   .quick-music-link:hover { background: color-mix(in srgb, var(--music-fg) 6%, transparent); }

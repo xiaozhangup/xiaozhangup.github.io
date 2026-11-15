@@ -17,15 +17,13 @@ const { active = false } = Astro.props;
     </button>
     <div class="window-controls"><WindowControls name="music" /></div>
   </header>
-  <div class="music-window-switcher">
-    <div class="music-window-tabs" role="tablist" aria-label="音乐视图" data-i18n-aria="musicViews" {...{ focusgroup: 'tablist nomemory' }}>
-      <button type="button" id="music-tracks-tab" role="tab" aria-selected="true" {...{ focusgroupstart: '' }}>
-        <AdwIcon name="document-open-recent" /><span data-i18n="recentlyPlayed">最近听过</span>
-      </button>
-      <button type="button" id="music-artists-tab" role="tab" aria-selected="false">
-        <AdwIcon name="avatar-default" /><span data-i18n="artists">歌手</span>
-      </button>
-    </div>
+  <div class="music-window-tabs" role="tablist" aria-label="音乐视图" data-i18n-aria="musicViews" {...{ focusgroup: 'tablist nomemory' }}>
+    <button type="button" id="music-tracks-tab" role="tab" aria-selected="true" {...{ focusgroupstart: '' }}>
+      <AdwIcon name="document-open-recent" /><span data-i18n="recentlyPlayed">最近听过</span>
+    </button>
+    <button type="button" id="music-artists-tab" role="tab" aria-selected="false">
+      <AdwIcon name="avatar-default" /><span data-i18n="artists">歌手</span>
+    </button>
   </div>
   <div class="music-window-scroll">
     <p class="music-wait" data-listening-status aria-live="polite"><span data-i18n="listeningLoading">正在读取收听记录</span></p>

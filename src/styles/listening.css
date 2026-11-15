@@ -33,50 +33,81 @@
 
 .window--music {
   --title-inset: calc(4 * var(--control-size) + 16px);
+  display: grid;
+  grid-template:
+    "header" auto
+    "content" minmax(0, 1fr)
+    "switcher" auto / minmax(0, 1fr);
   z-index: 20;
   width: min(728px, calc(100vw - 150px));
   height: min(594px, calc(100dvh - 88px));
   left: max(84px, calc((100vw - 728px) / 2 + 36px));
   top: max(calc(var(--shell-height) + 12px), calc((100dvh - 594px) / 2 + 12px));
 }
-.window--music .window-header { box-shadow: none; }
-.music-window-switcher {
-  display: flex;
-  justify-content: center;
-  padding: 0 12px 8px;
-  flex: none;
-  background: var(--headerbar-bg-color);
-  box-shadow: inset 0 -1px var(--headerbar-shade-color);
-  transition: background-color var(--control-duration);
+.window--music > .window-header {
+  grid-area: header;
+  background: var(--window-bg-color);
+  box-shadow: none;
 }
-.window--music:not([data-active]) .music-window-switcher { background: var(--headerbar-backdrop-color); }
 .music-window-tabs {
+  grid-area: switcher;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 3px;
-  width: min(100%, 328px);
+  padding: 6px;
+  border-block-start: 1px solid var(--headerbar-shade-color);
+  background: var(--window-bg-color);
 }
 .music-window-tabs button {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 7px;
-  min-height: 34px;
-  padding: 4px 9px;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 44px;
+  padding: 4px 6px;
   border: 0;
   border-radius: 9px;
   color: inherit;
   background: transparent;
   cursor: pointer;
+  font-size: .75rem;
   font-weight: 700;
-  transition: background-color var(--control-duration), color var(--control-duration);
+  transition: background-color var(--control-duration);
 }
 .music-window-tabs button:hover { background: var(--row-hover); }
 .music-window-tabs button[aria-selected='true'] { background: var(--row-selected); }
 .music-window-tabs button:active { background: var(--button-hover); }
 
+@media (width > 760px) and ((height > 480px) or (pointer: fine) or (pointer: none)) {
+  @container desktop-window (width >= 640px) {
+    .music-window-tabs {
+      grid-area: header;
+      place-self: center;
+      z-index: 4;
+      grid-template-columns: repeat(2, minmax(120px, 1fr));
+      width: max-content;
+      padding: 0;
+      border: 0;
+      background: transparent;
+    }
+    .music-window-tabs button {
+      flex-direction: row;
+      gap: 6px;
+      min-height: 34px;
+      padding: 2px 12px;
+      font-size: inherit;
+    }
+    .window--music .window-drag .window-title { visibility: hidden; }
+  }
+}
+
+@media (forced-colors: active) {
+  .music-window-tabs button[aria-selected='true'] { border: 1px solid ButtonText; }
+}
+
 .music-window-scroll {
-  flex: 1;
+  grid-area: content;
   min-height: 0;
   overflow: auto;
   scrollbar-color: var(--scroll) transparent;

@@ -1,4 +1,4 @@
-import { coverColor, initMusicWaves } from './musicVisuals';
+import { alignCompactMusicStatus, coverColor, initMusicWaves } from './musicVisuals';
 
 interface Track {
   title: string;
@@ -38,6 +38,7 @@ export function initSpotify(t: (key: string) => string, mobile: MediaQueryList, 
   const quickCard = bar.querySelector<HTMLElement>('.quick-music')!;
   const quickMenu = quickCard.closest<HTMLElement>('[data-disclosure]')!;
   const setWavePlaying = initMusicWaves(bar);
+  alignCompactMusicStatus(quickCard);
   const timelines = Array.from(bar.querySelectorAll<HTMLElement>('[data-spotify-timeline]'), (element) => ({
     element,
     owner: element.closest<HTMLElement>('[data-disclosure]')!,

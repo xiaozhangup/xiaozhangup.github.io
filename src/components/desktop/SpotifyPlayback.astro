@@ -1,5 +1,6 @@
 ---
 import { Icon } from 'astro-icon/components';
+import AdwIcon from './AdwIcon.astro';
 import MusicWave from './MusicWave.astro';
 
 interface Props { compact?: boolean }
@@ -14,7 +15,10 @@ const coverSize = compact ? 40 : 84;
   {compact && (
     <header class="music-listening">
       <Icon name="simple-icons:spotify" aria-hidden="true" />
-      <span data-i18n="listeningNow">我正在听</span>
+      <span class="music-listening-label">
+        <span data-i18n="listeningNow">我正在听</span><span class="music-listening-baseline" aria-hidden="true"></span>
+      </span>
+      <AdwIcon name="go-next" class="music-listening-chevron" />
     </header>
   )}
   <div class="music-main">

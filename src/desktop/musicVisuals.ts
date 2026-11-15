@@ -23,6 +23,29 @@ export async function coverColor(url: string) {
   return weight ? [red, green, blue].map((channel) => Math.floor(channel / weight)) : null;
 }
 
+export function alignCompactMusicStatus(card: HTMLElement) {
+  const label = card.querySelector<HTMLElement>('.music-listening-label')!;
+  const text = label.querySelector<HTMLElement>('[data-i18n]')!;
+  const baseline = label.querySelector<HTMLElement>('.music-listening-baseline')!;
+  const logo = card.querySelector<SVGElement>('.music-listening svg')!;
+  const measure = document.createElement('canvas').getContext('2d')!;
+
+  function align() {
+    if (!label.offsetWidth) return;
+    const { fontWeight, fontSize, fontFamily } = getComputedStyle(text);
+    measure.font = `${fontWeight} ${fontSize} ${fontFamily}`;
+    const { actualBoundingBoxAscent, actualBoundingBoxDescent } = measure.measureText(text.textContent!);
+    const icon = logo.getBoundingClientRect();
+    const scale = icon.height / parseFloat(getComputedStyle(logo).height);
+    const baselineToIcon = (icon.top + icon.height / 2 - baseline.getBoundingClientRect().top) / scale;
+    const inkCenter = (actualBoundingBoxDescent - actualBoundingBoxAscent) / 2;
+    text.style.insetBlockStart = `${baselineToIcon - inkCenter}px`;
+  }
+
+  new ResizeObserver(align).observe(label);
+  void document.fonts.ready.then(align);
+}
+
 // Dynamic Music Pill's centered pulse mode uses a shared timebase with per-bar speeds.
 const pulseSpeeds = [1.1, 1.6, 1.3, 1.8, 1.5, 1.2, 1.7, 1.4];
 

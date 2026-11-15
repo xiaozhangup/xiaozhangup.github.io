@@ -150,9 +150,7 @@ const mobileContacts = menus.filter((menu) => menu.mobile !== false).flatMap((me
           {endpoint && (
             <article class="mobile-only quick-music" hidden aria-label="Spotify 播放状态" data-i18n-aria="spotifyStatus">
               <SpotifyPlayback compact />
-              <a class="quick-music-link" data-spotify-link target="_blank" rel="noopener noreferrer" aria-label="在 Spotify 打开" data-i18n-aria="openSpotify" hidden>
-                <AdwIcon name="go-next" />
-              </a>
+              <a class="quick-music-link" data-spotify-link target="_blank" rel="noopener noreferrer" aria-label="在 Spotify 打开" data-i18n-aria="openSpotify" hidden></a>
             </article>
           )}
         </div>
