@@ -148,7 +148,7 @@ function pushUrl(url: string) {
   if (location.pathname + location.search + location.hash !== url) history.pushState({}, '', url);
 }
 function setSearchVisible(open: boolean) {
-  searchForm.hidden = !open;
+  searchForm.hidden = !open && !mobileLayout.matches;
   libraryPath.hidden = open;
   searchButton.setAttribute('aria-expanded', String(open));
 }
@@ -167,7 +167,7 @@ function hideSearch() {
     setSearchVisible(false);
     filterPosts();
   }
-  const trigger = searchButton.offsetWidth ? searchButton : library.querySelector<HTMLButtonElement>('[data-disclosure-trigger]')!;
+  const trigger = mobileLayout.matches ? heading : searchButton.offsetWidth ? searchButton : library.querySelector<HTMLButtonElement>('[data-disclosure-trigger]')!;
   trigger.focus();
 }
 function setFilter(kind: FilterKind, value = '', updateUrl = false, url = '/blog/') {
@@ -358,7 +358,7 @@ function focusNextWindow() {
 }
 function syncSidebar() {
   const compact = library.classList.contains('is-compact');
-  const open = compact ? library.classList.contains('sidebar-open') : !library.classList.contains('sidebar-hidden');
+  const open = mobileLayout.matches || (compact ? library.classList.contains('sidebar-open') : !library.classList.contains('sidebar-hidden'));
   sidebar.inert = !open;
   sidebarToggle.setAttribute('aria-expanded', String(open));
 }
@@ -582,6 +582,8 @@ scheduleDockOverlap();
 
 mobileLayout.addEventListener('change', () => {
   dismissDisclosure();
+  setSearchVisible(searchButton.getAttribute('aria-expanded') === 'true');
+  syncSidebar();
   if (mobileLayout.matches && (!activeWindow || !isVisible(activeWindow))) {
     const next = [...dockItems.keys()].filter(isVisible).sort((a, b) => Number(b.style.zIndex) - Number(a.style.zIndex))[0] ?? library;
     focusWindow(next);
@@ -671,6 +673,15 @@ document.querySelectorAll<HTMLButtonElement>('[data-copy-email]').forEach((contr
     .catch(() => announce(t('copyEmailFailed')));
   dismissDisclosure(true);
 }));
+function copyArticleLink(reader: HTMLElement, control: HTMLElement) {
+  navigator.clipboard.writeText(new URL(windowRoute(reader), location.origin).href)
+    .then(() => { announce(t('linkCopied')); control.setAttribute('title', t('linkCopied')); })
+    .catch(() => announce(t('copyFailed')));
+}
+document.querySelector<HTMLButtonElement>('[data-app-copy-link]')!.addEventListener('click', (event) => {
+  copyArticleLink(activeWindow!, event.currentTarget as HTMLButtonElement);
+  dismissDisclosure(true);
+});
 document.querySelectorAll<HTMLButtonElement>('[data-quick-action]').forEach((button) => button.addEventListener('click', () => {
   const action = button.dataset.quickAction;
   if (action === 'library') setFilter('all', '', true, '/blog/');

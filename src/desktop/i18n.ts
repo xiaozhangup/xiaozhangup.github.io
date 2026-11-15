@@ -3,7 +3,7 @@ export type Language = 'zh' | 'en';
 export const messages: Record<Language, Record<string, string>> = {
   zh: {
     email: '邮箱', changeLanguage: '切换语言', quickSettings: '快捷设置',
-    listeningNow: '我正在听',
+    listeningNow: '我正在听', preferences: '偏好设置', siteLinks: '站点', contact: '联系方式',
     darkStyle: '暗色样式', showDesktop: '显示桌面', animations: '界面动画',
     githubProfile: 'GitHub 主页', blogSource: '博客源码',
     copyEmail: '复制邮箱', emailCopied: '邮箱地址已复制', copyEmailFailed: '无法复制邮箱地址',
@@ -32,7 +32,7 @@ export const messages: Record<Language, Record<string, string>> = {
   },
   en: {
     email: 'Email', changeLanguage: 'Change language', quickSettings: 'Quick Settings',
-    listeningNow: 'I’m listening to',
+    listeningNow: 'I’m listening to', preferences: 'Preferences', siteLinks: 'Site', contact: 'Contact',
     darkStyle: 'Dark Style', showDesktop: 'Show Desktop', animations: 'Animations',
     githubProfile: 'GitHub profile', blogSource: 'Blog source',
     copyEmail: 'Copy email address', emailCopied: 'Email address copied', copyEmailFailed: 'Could not copy the email address',

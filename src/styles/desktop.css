@@ -356,6 +356,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
 .window--library.sidebar-hidden .library-sidebar { opacity: 0; padding-inline: 0; pointer-events: none; }
 .library-main { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .library-scroll, .reader-scroll, .about-content { min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-color: var(--scroll) transparent; scrollbar-width: thin; }
+.library-summary { display: contents; }
+.library-heading { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .library-scroll { flex: 1; padding: 4px 6px 40px; }
 .folder-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(94px, 100%), 1fr)); align-items: start; gap: 8px; padding: 12px; }
 .folder-item { display: flex; flex-direction: column; align-items: center; justify-content: start; min-height: 88px; gap: 5px; padding: 8px 6px; border-radius: 12px; text-align: center; overflow-wrap: anywhere; }

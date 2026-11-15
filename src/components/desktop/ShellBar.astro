@@ -102,7 +102,7 @@ const email = 'xiaozhangshiw@163.com';
   </div>
 
   <div class="topbar-end">
-    <div class="shell-menu" data-disclosure data-align="center">
+    <div class="shell-menu language-menu" data-disclosure data-align="center">
       <button type="button" class="shell-trigger language-trigger" data-disclosure-trigger aria-controls="language-menu" aria-expanded="false" data-i18n-aria="changeLanguage" aria-label="切换语言"><span data-language-indicator>拼</span></button>
       <div class="disclosure-panel shell-popover shell-list language-popover" id="language-menu" inert>
         <button type="button" class="shell-list-row" data-set-language="zh" lang="zh-CN" aria-pressed="true">中文</button>
@@ -119,16 +119,32 @@ const email = 'xiaozhangshiw@163.com';
       </button>
       <div class="disclosure-panel shell-popover quick-popover" id="quick-settings" inert>
         <div class="quick-grid">
-          <button type="button" class="quick-action" data-theme-toggle aria-pressed="true"><AdwIcon name="weather-clear-night" /><span data-i18n="darkStyle">暗色样式</span></button>
-          <button type="button" class="quick-action" data-motion-toggle aria-pressed="true"><AdwIcon name="view-app-grid" /><span data-i18n="animations">界面动画</span></button>
-          <button type="button" class="quick-action" data-quick-action="library"><AdwIcon name="text-x-generic" /><span data-i18n="allPosts">全部文章</span></button>
-          <button type="button" class="quick-action" data-quick-action="desktop"><AdwIcon name="user-desktop" /><span data-i18n="showDesktop">显示桌面</span></button>
-          <button type="button" class="quick-action quick-action--wide" data-quick-action="about"><AdwIcon name="help-about" /><span data-i18n="about">关于博客</span><AdwIcon name="go-next" /></button>
-          <a class="quick-action quick-action--wide mobile-only" href="https://github.com/xiaozhangup" target="_blank" rel="noopener noreferrer"><Icon name="simple-icons:github" aria-hidden="true" /><span data-i18n="githubProfile">GitHub 主页</span></a>
-          <a class="quick-action quick-action--wide mobile-only" href="https://github.com/xiaozhangup/xiaozhangup.github.io" target="_blank" rel="noopener noreferrer"><AdwIcon name="text-x-generic" /><span data-i18n="blogSource">博客源码</span></a>
-          <a class="quick-action quick-action--wide mobile-only" href={`mailto:${email}`}><AdwIcon name="mail-message-new" /><span>{email}</span></a>
-          <button type="button" class="quick-action quick-action--wide mobile-only" data-copy-email={email}><AdwIcon name="edit-copy" /><span data-i18n="copyEmail">复制邮箱</span></button>
-          <a class="quick-action quick-action--wide" href="/rss.xml"><AdwIcon name="application-rss+xml" /><span data-i18n="rss">RSS 订阅</span><AdwIcon name="go-next" /></a>
+          <div class="quick-group quick-preferences">
+            <h2 class="mobile-only" data-i18n="preferences">偏好设置</h2>
+            <button type="button" class="quick-action" data-theme-toggle aria-pressed="true"><AdwIcon name="weather-clear-night" /><span data-i18n="darkStyle">暗色样式</span></button>
+            <button type="button" class="quick-action" data-motion-toggle aria-pressed="true"><AdwIcon name="view-app-grid" /><span data-i18n="animations">界面动画</span></button>
+            <div class="mobile-only app-languages" role="group" aria-label="切换语言" data-i18n-aria="changeLanguage">
+              <button type="button" data-set-language="zh" lang="zh-CN" aria-pressed="true">中文</button>
+              <button type="button" data-set-language="en" lang="en" aria-pressed="false">English</button>
+            </div>
+          </div>
+          <div class="quick-group quick-links">
+            <h2 class="mobile-only" data-i18n="siteLinks">站点</h2>
+            <button type="button" class="quick-action quick-action--wide mobile-only app-copy-link" data-app-copy-link><AdwIcon name="insert-link" /><span data-i18n="copyLink">复制文章链接</span></button>
+            <button type="button" class="quick-action" data-quick-action="library"><AdwIcon name="text-x-generic" /><span data-i18n="allPosts">全部文章</span></button>
+            <button type="button" class="quick-action" data-quick-action="desktop"><AdwIcon name="user-desktop" /><span data-i18n="showDesktop">显示桌面</span></button>
+            <button type="button" class="quick-action quick-action--wide" data-quick-action="about"><AdwIcon name="help-about" /><span data-i18n="about">关于博客</span><AdwIcon name="go-next" /></button>
+            <details class="mobile-only quick-contact">
+              <summary class="quick-action"><AdwIcon name="mail-message-new" /><span data-i18n="contact">联系方式</span><AdwIcon name="go-next" class="contact-chevron" /></summary>
+              <div class="quick-contact-links">
+                <a class="quick-action" href="https://github.com/xiaozhangup" target="_blank" rel="noopener noreferrer"><Icon name="simple-icons:github" aria-hidden="true" /><span data-i18n="githubProfile">GitHub 主页</span></a>
+                <a class="quick-action" href="https://github.com/xiaozhangup/xiaozhangup.github.io" target="_blank" rel="noopener noreferrer"><AdwIcon name="text-x-generic" /><span data-i18n="blogSource">博客源码</span></a>
+                <a class="quick-action" href={`mailto:${email}`}><AdwIcon name="mail-message-new" /><span>{email}</span></a>
+                <button type="button" class="quick-action" data-copy-email={email}><AdwIcon name="edit-copy" /><span data-i18n="copyEmail">复制邮箱</span></button>
+              </div>
+            </details>
+            <a class="quick-action quick-action--wide" href="/rss.xml"><AdwIcon name="application-rss+xml" /><span data-i18n="rss">RSS 订阅</span><AdwIcon name="go-next" /></a>
+          </div>
         </div>
       </div>
     </div>

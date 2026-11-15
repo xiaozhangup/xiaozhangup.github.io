@@ -124,8 +124,11 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
             )}
           </aside>
           <div class="library-main">
-            <h1 class="visually-hidden" data-library-heading tabindex="-1">{filterLabels[initialFilter]}</h1>
             <div class="library-scroll">
+              <div class="library-summary">
+                <h1 class="library-heading" data-library-heading tabindex="-1">{filterLabels[initialFilter]}</h1>
+                <span class="window-status" data-status-count>{posts.length} 篇文章</span>
+              </div>
               <div class="folder-grid" data-category-chips hidden={initialFilter !== 'categories'}>
                 {categories.map((category) => (
                   <a class="folder-item" href={`/blog/category/${encodeURIComponent(category)}/`} data-desktop-filter="category" data-value={category}>
@@ -162,6 +165,7 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
                             </span>
                           </span>
                           <time class="file-date post-date" datetime={post.data.pubDate.toISOString()}>{date(post.data.pubDate)}</time>
+                          <AdwIcon class="app-post-chevron mobile-only" name="go-next" />
                         </a>
                       </article>
                     );
@@ -172,7 +176,6 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
                 </div>
               </div>
             </div>
-            <span class="window-status" data-status-count>{posts.length} 篇文章</span>
           </div>
         </div>
         <WindowResizeAreas />
