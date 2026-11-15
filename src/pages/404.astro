@@ -4,8 +4,8 @@ import DesktopShell from '@layouts/DesktopShell.astro';
 <DesktopShell title="页面未找到" initialWindow="reader">
   <article slot="article" class="article-document" data-article-fragment>
     <span class="article-kicker">404 / NOT FOUND</span>
-    <h1 tabindex="-1">没有找到这个页面</h1>
-    <p class="article-description">这个地址可能已经改变，或者页面不存在。</p>
-    <div class="article-body"><p><a href="/blog/" data-open-library>返回所有文章</a></p></div>
+    <h1 tabindex="-1" data-i18n="notFound">没有找到这个页面</h1>
+    <p class="article-description" data-i18n="notFoundDescription">这个地址可能已经改变，或者页面不存在。</p>
+    <div class="article-body"><p><a href="/blog/" data-open-library data-i18n="backToAll">返回所有文章</a></p></div>
   </article>
 </DesktopShell>

@@ -1,5 +1,5 @@
 import type { CollectionEntry } from "astro:content";
-import { getCollection } from "astro:content";
+import { getAllPosts } from "@utils/blogUtils";
 import rss from "@astrojs/rss";
 import {
   SITE_DESCRIPTION,
@@ -35,11 +35,7 @@ function toUtcDate(date: Date): Date {
 
 export async function GET(context: APIContext) {
   const siteUrl = context.site ? new URL(context.site) : new URL(USER_SITE);
-  const allPosts = await getCollection("blog");
-  // Filter out draft posts in production mode
-  const posts = import.meta.env.PROD
-    ? allPosts.filter((post: CollectionEntry<"blog">) => !post.data.draft)
-    : allPosts;
+  const posts = await getAllPosts();
   const sortedPosts = posts.sort(
     (a: CollectionEntry<"blog">, b: CollectionEntry<"blog">) =>
       new Date(b.data.pubDate).getTime() - new Date(a.data.pubDate).getTime(),

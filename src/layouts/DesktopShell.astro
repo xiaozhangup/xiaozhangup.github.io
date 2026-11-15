@@ -1,8 +1,8 @@
 ---
-import type { CollectionEntry } from 'astro:content';
+import { getCollection, type CollectionEntry } from 'astro:content';
 import { Icon } from 'astro-icon/components';
 import AdwIcon from '@/components/desktop/AdwIcon.astro';
-import { getAllPosts, sortPostsByPinAndDate } from '@utils/blogUtils';
+import { getAllPosts, sortPostsByPinAndDate, translationKey } from '@utils/blogUtils';
 import '@/styles/desktop.css';
 import 'katex/dist/katex.min.css';
 
@@ -16,6 +16,7 @@ interface Props {
 }
 const { title = '文章', description = 'xiaozhangup 的个人博客', initialWindow = 'library', initialFilter = 'all', filterValue = '', article } = Astro.props;
 const posts = sortPostsByPinAndDate(await getAllPosts());
+const translations = new Map((await getCollection('blogTranslations')).filter(post => !import.meta.env.PROD || !post.data.draft).map(post => [translationKey(post), post]));
 const categories = [...new Set(posts.flatMap((post) => post.data.categories ?? []))].sort((a, b) => a.localeCompare(b, 'zh-CN'));
 const tags = [...new Set(posts.flatMap((post) => post.data.tags ?? []))].sort((a, b) => a.localeCompare(b, 'zh-CN'));
 const navItems = [
@@ -49,22 +50,41 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
     <title>{title} · xiaozhangup 的博客</title>
   </head>
   <body data-initial-window={initialWindow} data-initial-filter={initialFilter} data-filter-value={filterValue}>
-    <a class="skip-link" href="#desktop-main">跳到主要内容</a>
+    <a class="skip-link" href="#desktop-main" data-i18n="skipToContent">跳到主要内容</a>
     <header class="topbar">
       <div class="topbar-start">
-        <span class="workspace-indicator" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><a href="/" class="topbar-brand">xiaozhangup</a><span class="topbar-divider"></span><span class="topbar-app" data-active-title>文章</span>
-        {endpoint && <a class="music-pill" data-spotify-endpoint={endpoint} data-spotify-link href="https://open.spotify.com/" target="_blank" rel="noopener noreferrer" aria-label="Spotify 播放状态">
+        <span class="workspace-indicator" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><a class="topbar-contact" href="https://github.com/xiaozhangup" target="_blank" rel="noopener noreferrer">GitHub</a><a class="topbar-contact" href="mailto:xiaozhangshiw@163.com" data-i18n="email">邮箱</a><span class="visually-hidden" data-active-title>文章</span>
+        {endpoint && <a class="music-pill" data-spotify-endpoint={endpoint} data-spotify-link href="https://open.spotify.com/" target="_blank" rel="noopener noreferrer" aria-label="Spotify 播放状态" data-i18n-aria="spotifyStatus">
           <span class="music-symbol"><img data-spotify-cover alt="" hidden /><Icon name="simple-icons:spotify" aria-hidden="true" /></span><span data-spotify-text>Spotify</span><span class="music-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
         </a>}
       </div>
-      <time class="topbar-clock" data-clock aria-label="当前日期和时间">博客桌面</time>
+      <time class="topbar-clock" data-clock data-i18n-aria="currentTime" aria-label="当前日期和时间">博客桌面</time>
       <div class="topbar-end">
-        <button class="topbar-theme" type="button" data-theme-toggle aria-label="切换浅色或深色外观" title="切换外观"><Icon name="lucide:sun-moon" aria-hidden="true" /></button>
-        <img class="topbar-avatar" src="/profile.png" width="26" height="26" alt="" />
+        <details class="shell-menu language-menu">
+          <summary class="shell-trigger language-trigger" data-i18n-aria="changeLanguage" aria-label="切换语言" title="切换语言"><span data-language-indicator>拼</span></summary>
+          <div class="shell-popover language-popover" aria-label="语言">
+            <button type="button" data-set-language="zh" aria-pressed="true">中文</button>
+            <button type="button" data-set-language="en" aria-pressed="false">English</button>
+          </div>
+        </details>
+        <details class="shell-menu quick-settings">
+          <summary class="shell-trigger quick-trigger" data-i18n-aria="quickSettings" aria-label="快捷设置" title="快捷设置"><AdwIcon name="preferences-system" /><AdwIcon name="pan-down" /></summary>
+          <div class="shell-popover quick-popover">
+            <div class="quick-heading" data-i18n="quickSettings">快捷设置</div>
+            <div class="quick-grid">
+              <button type="button" class="quick-action quick-theme" data-theme-toggle aria-pressed="true"><AdwIcon name="weather-clear-night" /><span data-theme-text>暗色样式</span></button>
+              <button type="button" class="quick-action" data-quick-action="library"><AdwIcon name="view-app-grid" /><span data-i18n="allPosts">全部文章</span></button>
+              <button type="button" class="quick-action" data-quick-action="desktop"><AdwIcon name="user-desktop" /><span data-i18n="showDesktop">显示桌面</span></button>
+              <button type="button" class="quick-action" data-quick-action="about"><AdwIcon name="dialog-information" /><span data-i18n="about">关于博客</span></button>
+            </div>
+          </div>
+        </details>
       </div>
     </header>
     <main id="desktop-main" class="desktop" tabindex="-1">
-      <nav class="dock" aria-label="桌面应用">
+      <button type="button" class="dock-edge" data-dock-edge aria-label="显示桌面应用" data-i18n-aria="showDock" aria-controls="desktop-dock" aria-expanded="false" hidden></button>
+      <div class="dock-anchor" data-dock-anchor>
+      <nav class="dock" id="desktop-dock" data-i18n-aria="desktopApps" aria-label="桌面应用">
         <a class="dock-item is-running" href="/blog/" data-open-library data-tooltip="文章" aria-label="打开文章"><img class="dock-app" src="/adwaita/color/gnome-files.svg" alt="" /><span class="dock-dot"></span></a>
         <button type="button" class="dock-item dock-reader" data-restore-reader data-tooltip="阅读器" aria-label="恢复阅读器窗口" hidden={initialWindow !== 'reader'}><img class="dock-app" src="/adwaita/color/text-x-generic.svg" alt="" /><span class="dock-dot"></span></button>
         <a class="dock-item" href="/blog/categories/" data-desktop-filter="categories" data-tooltip="分类" aria-label="打开分类"><img class="dock-app" src="/adwaita/color/folder-projects.svg" alt="" /></a>
@@ -76,51 +96,53 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
         <div class="dock-spacer"></div>
         <a class="dock-item" href="/rss.xml" data-tooltip="RSS 订阅" aria-label="RSS 订阅"><span class="dock-symbol dock-symbol--rss"><AdwIcon name="application-rss+xml" /></span></a>
       </nav>
+      </div>
 
-      <div class="desktop-icons" aria-label="桌面快捷方式">
-        <a href="/blog/" data-open-library class="desktop-shortcut"><img src="/adwaita/color/folder-documents.svg" alt="" /><span>文章</span></a>
-        <a href="/blog/archives/" data-desktop-filter="archives" class="desktop-shortcut"><img src="/adwaita/color/folder-projects.svg" alt="" /><span>归档</span></a>
-        <a href="/about/" data-open-about class="desktop-shortcut"><img src="/adwaita/color/user-home.svg" alt="" /><span>关于</span></a>
+      <div class="desktop-icons" data-i18n-aria="desktopShortcuts" aria-label="桌面快捷方式">
+        <a href="/blog/" data-open-library class="desktop-shortcut"><img src="/adwaita/color/folder-documents.svg" alt="" /><span data-i18n="posts">文章</span></a>
+        <a href="/blog/archives/" data-desktop-filter="archives" class="desktop-shortcut"><img src="/adwaita/color/folder-projects.svg" alt="" /><span data-i18n="archives">归档</span></a>
+        <a href="/about/" data-open-about class="desktop-shortcut"><img src="/adwaita/color/user-home.svg" alt="" /><span data-i18n="aboutShort">关于</span></a>
       </div>
 
       <section class="window window--library" data-window="library" aria-label="文章管理器">
         <header class="window-header">
-          <div class="window-header-leading"><button type="button" class="toolbar-icon sidebar-toggle" data-toggle-sidebar aria-controls="library-sidebar" aria-expanded="true" title="显示或隐藏侧栏" aria-label="显示或隐藏侧栏"><AdwIcon name="sidebar-show" /></button><span class="window-name">文章</span></div>
-          <button type="button" class="window-drag" data-drag-handle aria-label="移动文章窗口，使用方向键调整位置" title="拖动窗口，或使用方向键移动"><span data-breadcrumb>{filterLabels[initialFilter]}</span></button>
-          <div class="window-controls"><button type="button" class="toolbar-icon" data-focus-search aria-label="搜索文章" title="搜索"><AdwIcon name="system-search" /></button><details class="window-menu"><summary class="toolbar-icon" aria-label="窗口菜单" title="窗口菜单"><AdwIcon name="open-menu" /></summary><div class="window-menu-popover"><button type="button" data-center aria-label="居中窗口">居中窗口</button><button type="button" class="window-menu-mobile" data-minimize aria-label="最小化窗口">最小化</button><button type="button" class="window-menu-mobile" data-maximize aria-pressed="false" aria-label="最大化或还原窗口">最大化或还原</button></div></details><button type="button" class="window-control" data-minimize title="最小化" aria-label="最小化文章窗口"><AdwIcon name="window-minimize" /></button><button type="button" class="window-control" data-maximize title="最大化" aria-label="最大化或还原文章窗口" aria-pressed="false"><AdwIcon name="window-maximize" class="maximize-icon" /><AdwIcon name="window-restore" class="restore-icon" /></button><a class="window-control" href="/" data-close-window="library" title="关闭" aria-label="关闭文章窗口"><AdwIcon name="window-close" /></a></div>
+          <div class="window-header-leading"><button type="button" class="toolbar-icon sidebar-toggle" data-toggle-sidebar data-i18n-aria="showSidebar" aria-controls="library-sidebar" aria-expanded="true" title="显示或隐藏侧栏" aria-label="显示或隐藏侧栏"><AdwIcon name="sidebar-show" /></button><span class="window-name" data-i18n="posts">文章</span></div>
+          <button type="button" class="window-drag" data-drag-handle data-i18n-aria="moveWindow" aria-label="移动文章窗口，使用方向键调整位置" title="拖动窗口，或使用方向键移动"><span data-breadcrumb>{filterLabels[initialFilter]}</span></button>
+          <div class="window-controls"><button type="button" class="toolbar-icon" data-focus-search data-i18n-aria="searchAction" aria-label="搜索文章" title="搜索"><AdwIcon name="system-search" /></button><details class="window-menu"><summary class="toolbar-icon" data-i18n-aria="windowMenu" aria-label="窗口菜单" title="窗口菜单"><AdwIcon name="open-menu" /></summary><div class="window-menu-popover"><button type="button" data-center aria-label="居中窗口"><span data-i18n="centerWindow">居中窗口</span></button><button type="button" class="window-menu-mobile" data-minimize aria-label="最小化窗口"><span data-i18n="minimize">最小化</span></button><button type="button" class="window-menu-mobile" data-maximize aria-pressed="false" aria-label="最大化或还原窗口"><span data-i18n="maximize">最大化或还原</span></button></div></details><button type="button" class="window-control" data-minimize title="最小化" aria-label="最小化文章窗口"><AdwIcon name="window-minimize" /></button><button type="button" class="window-control" data-maximize title="最大化" aria-label="最大化或还原文章窗口" aria-pressed="false"><AdwIcon name="window-maximize" class="maximize-icon" /><AdwIcon name="window-restore" class="restore-icon" /></button><a class="window-control" href="/" data-close-window="library" title="关闭" aria-label="关闭文章窗口"><AdwIcon name="window-close" /></a></div>
         </header>
         <div class="library-layout">
           <aside class="library-sidebar" id="library-sidebar">
-            <div class="sidebar-label">浏览</div>
-            <nav class="library-nav" aria-label="文章导航">
-              {navItems.map(item => <a href={item.href} data-desktop-filter={item.kind} class:list={['side-link', (initialFilter === item.kind || initialFilter === 'category' && item.kind === 'categories' || initialFilter === 'tag' && item.kind === 'tags') && 'is-selected']}><AdwIcon name={item.icon} /><span>{item.label}</span>{item.kind === 'all' && <span class="side-count">{posts.length}</span>}</a>)}
+            <div class="sidebar-label" data-i18n="browse">浏览</div>
+            <nav class="library-nav" data-i18n-aria="postNavigation" aria-label="文章导航">
+              {navItems.map(item => <a href={item.href} data-desktop-filter={item.kind} class:list={['side-link', (initialFilter === item.kind || initialFilter === 'category' && item.kind === 'categories' || initialFilter === 'tag' && item.kind === 'tags') && 'is-selected']}><AdwIcon name={item.icon} /><span data-i18n={item.kind === 'all' ? 'allPosts' : item.kind}>{item.label}</span>{item.kind === 'all' && <span class="side-count">{posts.length}</span>}</a>)}
             </nav>
-            <div class="sidebar-label sidebar-label--section">分类</div>
-            <nav class="library-nav library-nav--sub" aria-label="文章分类">
-              {categories.length ? categories.map(category => <a href={`/blog/category/${encodeURIComponent(category)}/`} data-desktop-filter="category" data-value={category} class:list={['side-link', initialFilter === 'category' && filterValue === category && 'is-selected']}><AdwIcon name="folder" /><span>{category}</span></a>) : <span class="sidebar-empty">暂无分类</span>}
+            <div class="sidebar-label sidebar-label--section" data-i18n="categories">分类</div>
+            <nav class="library-nav library-nav--sub" data-i18n-aria="postCategories" aria-label="文章分类">
+              {categories.length ? categories.map(category => <a href={`/blog/category/${encodeURIComponent(category)}/`} data-desktop-filter="category" data-value={category} class:list={['side-link', initialFilter === 'category' && filterValue === category && 'is-selected']}><AdwIcon name="folder" /><span>{category}</span></a>) : <span class="sidebar-empty" data-i18n="noCategories">暂无分类</span>}
             </nav>
           </aside>
           <div class="library-main">
             <div class="library-scroll">
               <div class="library-content">
               <div class="library-intro"><div><h1 data-library-heading tabindex="-1">{filterLabels[initialFilter]}</h1><p data-list-summary>{posts.length} 篇文章</p></div></div>
-              <form class="search-box" action="/blog/search/" role="search" data-search-form><AdwIcon name="system-search" /><input type="search" name="q" placeholder="搜索文章、分类或标签" aria-label="搜索文章、分类或标签" data-search /><kbd>/</kbd></form>
+              <form class="search-box" action="/blog/search/" role="search" data-search-form><AdwIcon name="system-search" /><input type="search" name="q" placeholder="搜索文章、分类或标签" aria-label="搜索文章、分类或标签" data-i18n-placeholder="searchPlaceholder" data-i18n-aria="searchPlaceholder" data-search /><kbd>/</kbd></form>
               <div class="filter-chips" data-category-chips hidden={initialFilter !== 'categories'}>
                 {categories.map(category => <a href={`/blog/category/${encodeURIComponent(category)}/`} data-desktop-filter="category" data-value={category}><AdwIcon name="folder" />{category}</a>)}
               </div>
               <div class="filter-chips" data-tag-chips hidden={initialFilter !== 'tags'}>
                 {tags.map(tag => <a href={`/blog/tag/${encodeURIComponent(tag)}/`} data-desktop-filter="tag" data-value={tag}><AdwIcon name="user-bookmarks" />{tag}</a>)}
               </div>
-              <div class="list-heading"><span data-list-label>最近的文章</span><span>日期</span></div>
+              <div class="list-heading"><span data-list-label>最近的文章</span><span data-i18n="date">日期</span></div>
               <div class="post-list" data-post-list>
                 {posts.map((post) => {
+                  const translated = translations.get(translationKey(post));
                   const matches = initialFilter === 'category' ? (post.data.categories ?? []).includes(filterValue) : initialFilter === 'tag' ? (post.data.tags ?? []).includes(filterValue) : true;
-                  return <article class="post-row" data-post-row data-title={post.data.title.toLocaleLowerCase()} data-description={post.data.description.toLocaleLowerCase()} data-categories={JSON.stringify(post.data.categories ?? [])} data-tags={JSON.stringify(post.data.tags ?? [])} hidden={!matches}>
-                    <a class="post-main" href={`/blog/${post.id}/`} data-open-article><span class="post-file-icon"><AdwIcon name="text-x-generic" /></span><span class="post-copy"><strong>{post.data.title}</strong><small>{post.data.description}</small><span class="post-tags">{(post.data.categories ?? []).slice(0, 1).map(category => <span>{category}</span>)}{(post.data.tags ?? []).slice(0, 2).map(tag => <span>#{tag}</span>)}</span></span></a>
+                  return <article class="post-row" data-post-row data-title={post.data.title.toLocaleLowerCase()} data-description={post.data.description.toLocaleLowerCase()} data-title-en={translated?.data.title.toLocaleLowerCase()} data-description-en={translated?.data.description.toLocaleLowerCase()} data-categories={JSON.stringify(post.data.categories ?? [])} data-tags={JSON.stringify(post.data.tags ?? [])} hidden={!matches}>
+                    <a class="post-main" href={`/blog/${post.id}/`} data-open-article><span class="post-file-icon"><AdwIcon name="text-x-generic" /></span><span class="post-copy"><strong data-post-title data-zh={post.data.title} data-en={translated?.data.title ?? post.data.title}>{post.data.title}</strong><small data-post-description data-zh={post.data.description} data-en={translated?.data.description ?? post.data.description}>{post.data.description}</small><span class="post-tags">{(post.data.categories ?? []).slice(0, 1).map(category => <span>{category}</span>)}{(post.data.tags ?? []).slice(0, 2).map(tag => <span>#{tag}</span>)}</span></span></a>
                     <time class="post-date" datetime={post.data.pubDate.toISOString()}>{date(post.data.pubDate)}</time>
                   </article>;
                 })}
-                <div class="empty-list" data-empty-list hidden><AdwIcon name="system-search" /><strong>没有找到文章</strong><span>换个关键词或查看全部文章。</span></div>
+                <div class="empty-list" data-empty-list hidden><AdwIcon name="system-search" /><strong data-i18n="noResults">没有找到文章</strong><span data-i18n="tryAnotherSearch">换个关键词或查看全部文章。</span></div>
               </div>
               </div>
             </div>
@@ -131,16 +153,16 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
 
       <section class="window window--reader" data-window="reader" data-article-url={article ? `/blog/${article.id}/` : undefined} aria-label="文章阅读器" hidden={initialWindow !== 'reader'}>
         <header class="window-header">
-          <div class="window-header-leading"><a href="/blog/" data-open-library class="toolbar-icon" aria-label="返回文章列表" title="返回文章列表"><AdwIcon name="go-previous" /></a></div>
-          <button type="button" class="window-drag" data-drag-handle aria-label="移动阅读器窗口，使用方向键调整位置" title="拖动窗口，或使用方向键移动"><span data-reader-title>{article?.data.title ?? '文章'}</span></button>
-          <div class="window-controls"><button type="button" class="toolbar-icon" data-copy-link aria-label="复制文章链接" title="复制文章链接"><AdwIcon name="insert-link" /></button><details class="window-menu"><summary class="toolbar-icon" aria-label="窗口菜单" title="窗口菜单"><AdwIcon name="open-menu" /></summary><div class="window-menu-popover"><button type="button" data-center aria-label="居中窗口">居中窗口</button><button type="button" class="window-menu-mobile" data-minimize aria-label="最小化窗口">最小化</button><button type="button" class="window-menu-mobile" data-maximize aria-pressed="false" aria-label="最大化或还原窗口">最大化或还原</button></div></details><button type="button" class="window-control" data-minimize title="最小化" aria-label="最小化阅读器窗口"><AdwIcon name="window-minimize" /></button><button type="button" class="window-control" data-maximize title="最大化" aria-label="最大化或还原阅读器窗口" aria-pressed="false"><AdwIcon name="window-maximize" class="maximize-icon" /><AdwIcon name="window-restore" class="restore-icon" /></button><a class="window-control" href="/blog/" data-close-window="reader" title="关闭" aria-label="关闭阅读器窗口"><AdwIcon name="window-close" /></a></div>
+          <div class="window-header-leading"><a href="/blog/" data-open-library class="toolbar-icon" data-i18n-aria="backToPosts" aria-label="返回文章列表" title="返回文章列表"><AdwIcon name="go-previous" /></a></div>
+          <button type="button" class="window-drag" data-drag-handle data-i18n-aria="moveWindow" aria-label="移动阅读器窗口，使用方向键调整位置" title="拖动窗口，或使用方向键移动"><span data-reader-title>{article?.data.title ?? '文章'}</span></button>
+          <div class="window-controls"><button type="button" class="toolbar-icon" data-copy-link data-i18n-aria="copyLink" aria-label="复制文章链接" title="复制文章链接"><AdwIcon name="insert-link" /></button><details class="window-menu"><summary class="toolbar-icon" data-i18n-aria="windowMenu" aria-label="窗口菜单" title="窗口菜单"><AdwIcon name="open-menu" /></summary><div class="window-menu-popover"><button type="button" data-center aria-label="居中窗口"><span data-i18n="centerWindow">居中窗口</span></button><button type="button" class="window-menu-mobile" data-minimize aria-label="最小化窗口"><span data-i18n="minimize">最小化</span></button><button type="button" class="window-menu-mobile" data-maximize aria-pressed="false" aria-label="最大化或还原窗口"><span data-i18n="maximize">最大化或还原</span></button></div></details><button type="button" class="window-control" data-minimize title="最小化" aria-label="最小化阅读器窗口"><AdwIcon name="window-minimize" /></button><button type="button" class="window-control" data-maximize title="最大化" aria-label="最大化或还原阅读器窗口" aria-pressed="false"><AdwIcon name="window-maximize" class="maximize-icon" /><AdwIcon name="window-restore" class="restore-icon" /></button><a class="window-control" href="/blog/" data-close-window="reader" title="关闭" aria-label="关闭阅读器窗口"><AdwIcon name="window-close" /></a></div>
         </header>
         <div class="reader-scroll" data-reader-content><slot name="article" /></div>
       </section>
 
       <section class="window window--about" data-window="about" aria-label="关于博客" hidden={initialWindow !== 'about'}>
-        <header class="window-header"><div class="window-header-leading"><span class="window-name">关于</span></div><button type="button" class="window-drag" data-drag-handle aria-label="移动关于窗口，使用方向键调整位置"><span>关于这个博客</span></button><div class="window-controls"><details class="window-menu"><summary class="toolbar-icon" aria-label="窗口菜单" title="窗口菜单"><AdwIcon name="open-menu" /></summary><div class="window-menu-popover"><button type="button" data-center aria-label="居中窗口">居中窗口</button><button type="button" class="window-menu-mobile" data-minimize aria-label="最小化窗口">最小化</button></div></details><button type="button" class="window-control" data-minimize title="最小化" aria-label="最小化关于窗口"><AdwIcon name="window-minimize" /></button><a class="window-control" href="/blog/" data-close-window="about" title="关闭" aria-label="关闭关于窗口"><AdwIcon name="window-close" /></a></div></header>
-        <div class="about-content"><img src="/profile.png" width="92" height="92" alt="" /><h2>xiaozhangup</h2><p>欢迎来到我的个人博客。</p><div class="about-links"><a href="https://github.com/xiaozhangup" target="_blank" rel="noopener noreferrer"><Icon name="simple-icons:github" aria-hidden="true" /> GitHub</a><a href="/rss.xml"><AdwIcon name="application-rss+xml" /> RSS 订阅</a></div></div>
+        <header class="window-header"><div class="window-header-leading"><span class="window-name" data-i18n="aboutShort">关于</span></div><button type="button" class="window-drag" data-drag-handle data-i18n-aria="moveWindow" aria-label="移动关于窗口，使用方向键调整位置"><span data-i18n="aboutThisBlog">关于这个博客</span></button><div class="window-controls"><details class="window-menu"><summary class="toolbar-icon" data-i18n-aria="windowMenu" aria-label="窗口菜单" title="窗口菜单"><AdwIcon name="open-menu" /></summary><div class="window-menu-popover"><button type="button" data-center aria-label="居中窗口"><span data-i18n="centerWindow">居中窗口</span></button><button type="button" class="window-menu-mobile" data-minimize aria-label="最小化窗口"><span data-i18n="minimize">最小化</span></button></div></details><button type="button" class="window-control" data-minimize title="最小化" aria-label="最小化关于窗口"><AdwIcon name="window-minimize" /></button><a class="window-control" href="/blog/" data-close-window="about" title="关闭" aria-label="关闭关于窗口"><AdwIcon name="window-close" /></a></div></header>
+        <div class="about-content"><img src="/profile.png" width="92" height="92" alt="" /><h2>xiaozhangup</h2><p data-i18n="welcome">欢迎来到我的个人博客。</p><div class="about-links"><a href="https://github.com/xiaozhangup" target="_blank" rel="noopener noreferrer"><Icon name="simple-icons:github" aria-hidden="true" /> GitHub</a><a href="/rss.xml"><AdwIcon name="application-rss+xml" /> <span data-i18n="rss">RSS 订阅</span></a></div></div>
       </section>
       <div class="visually-hidden" aria-live="polite" data-announcer></div>
     </main>

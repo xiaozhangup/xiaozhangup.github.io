@@ -2,6 +2,10 @@ import type { CollectionEntry } from "astro:content";
 import { getCollection, render } from "astro:content";
 import type { Post } from "@interfaces/data";
 
+export function translationKey(post: CollectionEntry<"blog"> | CollectionEntry<"blogTranslations">): string {
+  return post.filePath!.replace(/(?:\.en)?\.mdx?$/i, "");
+}
+
 /**
  * 获取所有博客文章并根据环境过滤草稿
  * @returns 博客文章集合

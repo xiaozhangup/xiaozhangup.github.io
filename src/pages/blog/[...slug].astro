@@ -1,21 +1,38 @@
 ---
 import { type CollectionEntry, getCollection, render } from 'astro:content';
 import DesktopShell from '@layouts/DesktopShell.astro';
+import { translationKey } from '@utils/blogUtils';
+
 export async function getStaticPaths() {
-  const posts = await getCollection('blog');
-  return posts.filter(post => !import.meta.env.PROD || !post.data.draft).map(post => ({ params: { slug: post.id }, props: { post } }));
+  const entries = (await getCollection('blog')).filter(post => !import.meta.env.PROD || !post.data.draft);
+  const translatedEntries = (await getCollection('blogTranslations')).filter(post => !import.meta.env.PROD || !post.data.draft);
+  const translations = new Map(translatedEntries.map(post => [translationKey(post), post]));
+  return entries.map(post => ({
+    params: { slug: post.id }, props: { post, translation: translations.get(translationKey(post)) },
+  }));
 }
-interface Props { post: CollectionEntry<'blog'> }
-const { post } = Astro.props;
+interface Props { post: CollectionEntry<'blog'>; translation?: CollectionEntry<'blogTranslations'> }
+const { post, translation } = Astro.props;
 const { Content } = await render(post);
+const translated = translation ? await render(translation) : null;
+const TranslatedContent = translated?.Content;
 const date = new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Shanghai' }).format(post.data.pubDate);
 ---
 <DesktopShell title={post.data.title} description={post.data.description} initialWindow="reader" article={post}>
   <article slot="article" class="article-document" data-article-fragment data-pagefind-body>
-    <span class="article-kicker">XIAOZHANGUP / BLOG</span>
-    <h1 tabindex="-1">{post.data.title}</h1>
-    <p class="article-description">{post.data.description}</p>
-    <div class="article-meta"><time datetime={post.data.pubDate.toISOString()}>{date}</time>{(post.data.categories ?? []).map(category => <a href={`/blog/category/${encodeURIComponent(category)}/`} data-desktop-filter="category" data-value={category}>{category}</a>)}{(post.data.tags ?? []).map(tag => <a href={`/blog/tag/${encodeURIComponent(tag)}/`} data-desktop-filter="tag" data-value={tag}>#{tag}</a>)}</div>
-    <div class="article-body"><Content /></div>
+    <div data-article-language="zh" lang="zh-CN">
+      <span class="article-kicker">XIAOZHANGUP / BLOG</span>
+      <h1 tabindex="-1">{post.data.title}</h1>
+      <p class="article-description">{post.data.description}</p>
+      <div class="article-meta"><time datetime={post.data.pubDate.toISOString()}>{date}</time>{(post.data.categories ?? []).map(category => <a href={`/blog/category/${encodeURIComponent(category)}/`} data-desktop-filter="category" data-value={category}>{category}</a>)}{(post.data.tags ?? []).map(tag => <a href={`/blog/tag/${encodeURIComponent(tag)}/`} data-desktop-filter="tag" data-value={tag}>#{tag}</a>)}</div>
+      <div class="article-body"><Content /></div>
+    </div>
+    {translation && TranslatedContent && <div data-article-language="en" lang="en" hidden>
+      <span class="article-kicker">XIAOZHANGUP / BLOG</span>
+      <h1 tabindex="-1">{translation.data.title}</h1>
+      <p class="article-description">{translation.data.description}</p>
+      <div class="article-meta"><time datetime={post.data.pubDate.toISOString()}>{date}</time>{(post.data.categories ?? []).map(category => <a href={`/blog/category/${encodeURIComponent(category)}/`} data-desktop-filter="category" data-value={category}>{category}</a>)}{(post.data.tags ?? []).map(tag => <a href={`/blog/tag/${encodeURIComponent(tag)}/`} data-desktop-filter="tag" data-value={tag}>#{tag}</a>)}</div>
+      <div class="article-body"><TranslatedContent /></div>
+    </div>}
   </article>
 </DesktopShell>
