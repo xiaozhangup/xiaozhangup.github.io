@@ -20,6 +20,8 @@ const activeTitle = document.querySelector<HTMLElement>('[data-active-title]')!;
 const postRows = Array.from(document.querySelectorAll<HTMLElement>('[data-post-row]'));
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const readerDock = document.querySelector<HTMLButtonElement>('[data-restore-reader]')!;
+const sidebarToggle = document.querySelector<HTMLButtonElement>('[data-toggle-sidebar]')!;
+const mobileLayout = window.matchMedia('(max-width: 760px)');
 let searchVersion = 0;
 let searchTimer: ReturnType<typeof setTimeout> | undefined;
 let pagefind: Promise<any> | undefined;
@@ -90,7 +92,7 @@ function filterPosts() {
       if (visible) count++;
     }
     emptyList.hidden = count > 0;
-    summary.textContent = query ? `找到 ${count} 篇文章` : `${count} 篇文章 · 记录一些想法与故事`;
+    summary.textContent = query ? `找到 ${count} 篇文章` : `${count} 篇文章`;
     statusCount.textContent = `${count} 篇文章`;
   }
   renderMatches();
@@ -177,6 +179,13 @@ root.addEventListener('click', (event) => {
     syncReaderTitle();
     return;
   }
+  const toggleSidebar = target.closest<HTMLButtonElement>('[data-toggle-sidebar]');
+  if (toggleSidebar) {
+    const name = mobileLayout.matches ? 'sidebar-open' : 'sidebar-hidden';
+    const toggled = windows.library.classList.toggle(name);
+    toggleSidebar.setAttribute('aria-expanded', String(mobileLayout.matches ? toggled : !toggled));
+    return;
+  }
   const control = target.closest<HTMLElement>('[data-minimize], [data-maximize], [data-center]');
   if (control) {
     const win = control.closest<HTMLElement>('[data-window]')!;
@@ -190,8 +199,20 @@ root.addEventListener('click', (event) => {
         document.querySelector<HTMLElement>('[data-open-library]')?.focus();
       }
     }
-    if (control.hasAttribute('data-maximize')) { win.classList.toggle('is-maximized'); control.setAttribute('aria-pressed', String(win.classList.contains('is-maximized'))); }
-    if (control.hasAttribute('data-center')) { win.classList.remove('is-maximized'); win.querySelector('[data-maximize]')?.setAttribute('aria-pressed', 'false'); win.style.left = ''; win.style.top = ''; announce('窗口已居中'); }
+    if (control.hasAttribute('data-maximize')) {
+      win.classList.toggle('is-maximized');
+      win.querySelectorAll('[data-maximize]').forEach((button) => button.setAttribute('aria-pressed', String(win.classList.contains('is-maximized'))));
+    }
+    if (control.hasAttribute('data-center')) {
+      win.classList.remove('is-maximized');
+      win.querySelectorAll('[data-maximize]').forEach((button) => button.setAttribute('aria-pressed', 'false'));
+      win.style.left = ''; win.style.top = ''; announce('窗口已居中');
+    }
+    const menu = control.closest<HTMLDetailsElement>('details');
+    if (menu) {
+      menu.open = false;
+      if (!win.hidden) menu.querySelector<HTMLElement>('summary')!.focus();
+    }
     return;
   }
   const search = target.closest<HTMLElement>('[data-focus-search]');
@@ -208,6 +229,7 @@ root.addEventListener('click', (event) => {
   if (anchor.hasAttribute('data-open-library')) { event.preventDefault(); setFilter('all', '', true, '/blog/'); return; }
   if (anchor.dataset.desktopFilter) {
     event.preventDefault();
+    if (mobileLayout.matches) { windows.library.classList.remove('sidebar-open'); sidebarToggle.setAttribute('aria-expanded', 'false'); }
     setFilter(anchor.dataset.desktopFilter as FilterKind, anchor.dataset.value || '', true, anchor.pathname);
     if (anchor.dataset.desktopFilter === 'search') searchInput.focus();
   }
@@ -220,8 +242,14 @@ document.querySelector<HTMLFormElement>('[data-search-form]')!.addEventListener(
   setFilter('search', query, true, `/blog/search/${query ? `?q=${encodeURIComponent(query)}` : ''}`);
   searchInput.focus();
 });
+document.addEventListener('click', (event) => {
+  const target = event.target as HTMLElement;
+  document.querySelectorAll<HTMLDetailsElement>('.window-menu[open]').forEach((menu) => { if (!menu.contains(target)) menu.open = false; });
+});
 document.addEventListener('keydown', (event) => {
   const target = event.target as HTMLElement;
+  const openMenu = document.querySelector<HTMLDetailsElement>('.window-menu[open]');
+  if (event.key === 'Escape' && openMenu) { openMenu.open = false; openMenu.querySelector<HTMLElement>('summary')!.focus(); return; }
   if (event.key === '/' && !event.metaKey && !event.ctrlKey && !event.altKey && !target.matches('input,textarea,[contenteditable="true"]')) {
     event.preventDefault(); setFilter('search', '', true, '/blog/search/'); searchInput.focus();
   }
@@ -266,6 +294,12 @@ for (const handle of document.querySelectorAll<HTMLButtonElement>('[data-drag-ha
     announce('窗口位置已调整');
   });
 }
+function updateSidebarMode() {
+  windows.library.classList.remove('sidebar-open', 'sidebar-hidden');
+  sidebarToggle.setAttribute('aria-expanded', String(!mobileLayout.matches));
+}
+mobileLayout.addEventListener('change', updateSidebarMode);
+updateSidebarMode();
 window.addEventListener('resize', () => {
   if (window.innerWidth > 760) for (const win of Object.values(windows)) win.inert = false;
   else if (!windows[activeWindow].hidden) for (const [key, win] of Object.entries(windows)) win.inert = key !== activeWindow;
@@ -294,14 +328,17 @@ updateClock(); setInterval(updateClock, 30_000);
 const spotify = document.querySelector<HTMLAnchorElement>('[data-spotify-endpoint]');
 if (spotify) {
   const text = spotify.querySelector<HTMLElement>('[data-spotify-text]')!;
+  const cover = spotify.querySelector<HTMLImageElement>('[data-spotify-cover]')!;
   async function updateSpotify() {
     try {
       const response = await fetch(spotify!.dataset.spotifyEndpoint!);
       if (!response.ok) throw new Error('Spotify unavailable');
       const data = await response.json();
       text.textContent = data.playing ? `${data.title} · ${data.artist}` : 'Spotify · 未在播放';
+      cover.hidden = !data.playing || !data.cover;
+      if (!cover.hidden) cover.src = data.cover;
       spotify!.href = data.playing ? data.url : 'https://open.spotify.com/';
-    } catch { text.textContent = 'Spotify · 暂不可用'; }
+    } catch { cover.hidden = true; text.textContent = 'Spotify · 暂不可用'; }
   }
   void updateSpotify();
   setInterval(() => { if (!document.hidden) void updateSpotify(); }, 30_000);

@@ -1,0 +1,8 @@
+---
+interface Props {
+  name: string;
+  class?: string;
+}
+const { name, class: className } = Astro.props;
+---
+<span class:list={['adw-icon', className]} style={`--adw-icon: url('/adwaita/symbolic/${name}-symbolic.svg')`} aria-hidden="true"></span>

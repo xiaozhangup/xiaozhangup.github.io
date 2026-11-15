@@ -1,0 +1,5 @@
+Adwaita Sans is copyright its authors and is distributed under the SIL Open Font License 1.1; see AdwaitaSans-OFL.txt.
+
+The icons in symbolic/ and the other icons in color/ are from the Adwaita icon theme by the GNOME Project (https://www.gnome.org/) and are distributed under the LGPL 3.0 or CC BY-SA 3.0, at your option; see Adwaita-icons-license.txt and Adwaita-icons-LGPL.txt.
+
+color/gnome-files.svg is the GNOME Files icon by the GNOME Design Team, distributed under CC BY-SA 4.0; see GNOME-Files-icon-CC-BY-SA-4.txt. No changes were made to the artwork.

@@ -77,7 +77,9 @@ export default defineConfig({
         node.children.push(createExternalLinkIcon());
       },
     }),
-    playformCompress(),
+    playformCompress({
+      Exclude: [(file) => /(?:^|\/)wallpapers\/desktop-(wide|ultrawide)\.jpg$/.test(file)],
+    }),
   ],
   markdown: {
     processor: createMarkdownProcessor({
