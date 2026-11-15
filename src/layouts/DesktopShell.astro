@@ -85,11 +85,18 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
             <button type="button" class="toolbar-icon sidebar-toggle" data-toggle-sidebar data-i18n-aria="showSidebar" aria-controls="library-sidebar" aria-expanded="true" aria-label="显示或隐藏侧栏" title="显示或隐藏侧栏"><AdwIcon name="sidebar-show" /></button>
             <span class="window-name" data-i18n="posts">文章</span>
           </div>
-          <button type="button" class="window-drag" data-drag-handle data-i18n-aria="moveWindow" aria-label="移动窗口，使用方向键调整位置" title="移动窗口，使用方向键调整位置">
-            <span class="window-title window-location"><AdwIcon name="user-home" /><span data-breadcrumb>{filterLabels[initialFilter]}</span></span>
-          </button>
+          <button type="button" class="window-drag" data-drag-handle data-i18n-aria="moveWindow" aria-label="移动窗口，使用方向键调整位置" title="移动窗口，使用方向键调整位置"></button>
+          <div class="window-location">
+            <div class="window-path" data-library-path hidden={initialFilter === 'search'}>
+              <AdwIcon name="user-home" /><span data-breadcrumb>{filterLabels[initialFilter]}</span>
+            </div>
+            <form class="library-search" id="library-search" action="/blog/search/" role="search" data-search-form hidden={initialFilter !== 'search'}>
+              <AdwIcon name="folder-saved-search" />
+              <input type="search" name="q" placeholder="搜索文章、分类或标签" aria-label="搜索文章、分类或标签" data-i18n-placeholder="searchPlaceholder" data-i18n-aria="searchPlaceholder" data-search />
+            </form>
+          </div>
           <div class="window-controls">
-            <button type="button" class="toolbar-icon" data-focus-search data-i18n-aria="searchAction" aria-controls="library-search" aria-expanded={initialFilter === 'search' ? 'true' : 'false'} aria-label="搜索文章" title="搜索文章"><AdwIcon name="system-search" /></button>
+            <button type="button" class="toolbar-icon" data-focus-search data-i18n-aria="searchAction" aria-controls="library-search" aria-expanded={initialFilter === 'search' ? 'true' : 'false'} aria-label="搜索文章" title="搜索文章"><AdwIcon name="folder-saved-search" /></button>
             <WindowControls name="library" />
           </div>
         </header>
@@ -115,12 +122,6 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
           </aside>
           <div class="library-main">
             <h1 class="visually-hidden" data-library-heading tabindex="-1">{filterLabels[initialFilter]}</h1>
-            <form class="library-search" id="library-search" action="/blog/search/" role="search" data-search-form hidden={initialFilter !== 'search'}>
-              <label class="search-box">
-                <AdwIcon name="system-search" />
-                <input type="search" name="q" placeholder="搜索文章、分类或标签" aria-label="搜索文章、分类或标签" data-i18n-placeholder="searchPlaceholder" data-i18n-aria="searchPlaceholder" data-search />
-              </label>
-            </form>
             <div class="library-scroll">
               <div class="folder-grid" data-category-chips hidden={initialFilter !== 'categories'}>
                 {categories.map((category) => (

@@ -13,6 +13,7 @@ const windows = Object.fromEntries(
 ) as Record<WindowName, HTMLElement>;
 const readerContent = document.querySelector<HTMLElement>('[data-reader-content]')!;
 const searchForm = document.querySelector<HTMLFormElement>('[data-search-form]')!;
+const libraryPath = document.querySelector<HTMLElement>('[data-library-path]')!;
 const searchButton = document.querySelector<HTMLButtonElement>('[data-focus-search]')!;
 const searchInput = document.querySelector<HTMLInputElement>('[data-search]')!;
 const heading = document.querySelector<HTMLElement>('[data-library-heading]')!;
@@ -107,12 +108,25 @@ function pushUrl(url: string) {
 }
 function setSearchVisible(open: boolean) {
   searchForm.hidden = !open;
+  libraryPath.hidden = open;
   searchButton.setAttribute('aria-expanded', String(open));
 }
 function showSearch() {
   focusWindow('library');
+  windows.library.classList.remove('sidebar-open');
+  syncSidebar();
   setSearchVisible(true);
   searchInput.focus();
+}
+function hideSearch() {
+  if (currentFilter === 'search') setFilter('all', '', true);
+  else {
+    searchInput.value = '';
+    setSearchVisible(false);
+    filterPosts();
+  }
+  const trigger = searchButton.offsetWidth ? searchButton : windows.library.querySelector<HTMLButtonElement>('[data-disclosure-trigger]')!;
+  trigger.focus();
 }
 function setFilter(kind: FilterKind, value = '', updateUrl = false, url = '/blog/') {
   currentFilter = kind;
@@ -327,13 +341,7 @@ root.addEventListener('click', (event) => {
     const fromMenu = search.classList.contains('window-menu-extra');
     if (fromMenu) dismissDisclosure();
     if (searchForm.hidden || fromMenu) showSearch();
-    else if (currentFilter === 'search') setFilter('all', '', true);
-    else {
-      searchInput.value = '';
-      setSearchVisible(false);
-      filterPosts();
-      searchButton.focus();
-    }
+    else hideSearch();
     return;
   }
   const copy = target.closest<HTMLElement>('[data-copy-link]');
@@ -373,6 +381,11 @@ searchForm.addEventListener('submit', (event) => {
 document.addEventListener('keydown', (event) => {
   const target = event.target as HTMLElement;
   if (event.key === 'Escape' && dismissDisclosure(true)) return;
+  if (event.key === 'Escape' && target === searchInput) {
+    event.preventDefault();
+    hideSearch();
+    return;
+  }
   if (event.key === 'Escape' && dock.classList.contains('is-obscured') && dock.classList.contains('is-revealed')) {
     dockHoverSuppressed = true; setDockRevealed(false); dockEdge.focus(); return;
   }
