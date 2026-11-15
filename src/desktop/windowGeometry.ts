@@ -10,7 +10,6 @@ const direction: Record<string, [number, number]> = {
 
 function limits(win: HTMLElement) {
   return {
-    left: 0,
     top: topbar.offsetHeight,
     right: document.documentElement.clientWidth,
     bottom: document.documentElement.clientHeight,
@@ -32,18 +31,31 @@ const clamp = (value: number, min: number, max: number) => Math.max(min, Math.mi
 
 function move(win: HTMLElement, left: number, top: number) {
   const screen = limits(win);
-  win.style.left = `${clamp(left, screen.left, screen.right - win.offsetWidth)}px`;
-  win.style.top = `${clamp(top, screen.top, screen.bottom - win.offsetHeight)}px`;
+  const header = win.querySelector<HTMLElement>('.window-header')!;
+  const leading = header.querySelector<HTMLElement>('.window-header-leading');
+  const controls = header.querySelector<HTMLElement>('.window-controls')!;
+  const dragLeft = win.clientLeft + (leading ? leading.offsetLeft + leading.offsetWidth : 8);
+  const dragRight = win.clientLeft + controls.offsetLeft;
+  const visibleWidth = Math.min(48, dragRight - dragLeft);
+  const headerBottom = win.clientTop + header.offsetTop + header.offsetHeight;
+
+  // Keep a strip of the real drag handle clear of the title bar controls.
+  win.style.left = `${clamp(left, visibleWidth - dragRight, screen.right - dragLeft - visibleWidth)}px`;
+  // Keep the lower drag strip reachable beneath the shell bar, even with search open.
+  win.style.top = `${clamp(top, screen.top - headerBottom + 16, screen.bottom - headerBottom)}px`;
 }
 
 function resize(win: HTMLElement, start: ReturnType<typeof windowBox>, edge: string, dx: number, dy: number) {
   const screen = limits(win);
+  const height = screen.bottom - screen.top;
   let { left, right, top, bottom } = start;
-  if (edge.includes('w')) left = clamp(start.left + dx, screen.left, Math.max(screen.left, right - screen.minWidth));
-  if (edge.includes('e')) right = clamp(start.right + dx, Math.min(screen.right, left + screen.minWidth), screen.right);
-  if (edge.includes('n')) top = clamp(start.top + dy, screen.top, Math.max(screen.top, bottom - screen.minHeight));
-  if (edge.includes('s')) bottom = clamp(start.bottom + dy, Math.min(screen.bottom, top + screen.minHeight), screen.bottom);
-  Object.assign(win.style, { left: `${left}px`, top: `${top}px`, width: `${right - left}px`, height: `${bottom - top}px` });
+  if (edge.includes('w')) left = clamp(start.left + dx, right - screen.right, right - screen.minWidth);
+  if (edge.includes('e')) right = clamp(start.right + dx, left + screen.minWidth, left + screen.right);
+  if (edge.includes('n')) top = clamp(start.top + dy, bottom - height, bottom - screen.minHeight);
+  if (edge.includes('s')) bottom = clamp(start.bottom + dy, top + screen.minHeight, top + height);
+  win.style.width = `${right - left}px`;
+  win.style.height = `${bottom - top}px`;
+  move(win, left, top);
 }
 
 export function fitWindow(win: HTMLElement) {

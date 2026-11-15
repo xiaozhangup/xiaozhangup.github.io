@@ -62,7 +62,7 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
       <button type="button" class="dock-edge" data-dock-edge aria-label="显示桌面应用" data-i18n-aria="showDock" aria-controls="desktop-dock" aria-expanded="false" hidden></button>
       <div class="dock-anchor" data-dock-anchor>
         <nav class="dock" id="desktop-dock" data-i18n-aria="desktopApps" aria-label="桌面应用">
-          <DockWindow kind="library" label="文章管理器" href="/blog/" active={initialWindow === 'library'} />
+          <DockWindow kind="library" label="文章" href="/blog/" active={initialWindow === 'library'} />
           {initialWindow === 'reader' && <DockWindow kind="reader" label={title} href={Astro.url.pathname} active />}
           {initialWindow === 'about' && <DockWindow kind="about" label="关于博客" href="/about/" active />}
         </nav>
@@ -80,7 +80,7 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
         <a href="/about/" data-open-about class="desktop-shortcut" aria-describedby="desktop-shortcut-help"><img src="/adwaita/color/help-about.svg" alt="" /><span data-i18n="aboutShort">关于</span></a>
       </div>
 
-      <section class="window window--library" data-window="library" data-visible data-active={initialWindow === 'library' ? '' : undefined} aria-label="文章管理器">
+      <section class="window window--library" data-window="library" data-visible data-active={initialWindow === 'library' ? '' : undefined} aria-label="文章">
         <header class="window-header">
           <div class="window-header-leading">
             <button type="button" class="toolbar-icon sidebar-toggle" data-toggle-sidebar data-i18n-aria="showSidebar" aria-controls="library-sidebar" aria-expanded="true" aria-label="显示或隐藏侧栏" title="显示或隐藏侧栏"><AdwIcon name="sidebar-show" /></button>

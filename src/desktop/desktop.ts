@@ -44,6 +44,7 @@ let pagefind: Promise<any> | undefined;
 let topZ = 30;
 const initialKind = document.body.dataset.initialWindow as WindowKind;
 let activeWindow: HTMLElement | null = null;
+let libraryRunning = true;
 let readerNumber = 0;
 let currentFilter: FilterKind = document.body.dataset.initialFilter as FilterKind || 'all';
 let currentValue = document.body.dataset.filterValue || '';
@@ -92,11 +93,12 @@ function windowTitle(win: HTMLElement) {
   return win === library ? heading.textContent! : win === about ? t('aboutShort') : visibleReaderHeading(win)?.textContent?.trim() || t('reader');
 }
 function updateDockItem(win: HTMLElement, item: HTMLAnchorElement) {
-  const title = win === library ? t('library') : windowTitle(win);
+  const title = win === library ? t('posts') : windowTitle(win);
   item.href = windowRoute(win);
   item.dataset.tooltip = title;
   item.setAttribute('aria-label', title);
   item.classList.toggle('is-active', win === activeWindow && isVisible(win));
+  item.querySelector<HTMLElement>('.dock-dot')!.hidden = win === library && !libraryRunning;
 }
 function dockItemFor(win: HTMLElement, rendered?: HTMLAnchorElement) {
   const current = dockItems.get(win);
@@ -133,6 +135,7 @@ function focusWindow(win: HTMLElement, fly = false) {
     flyToWindow(win, item, true, () => focusWindow(win));
     return;
   }
+  if (win === library) libraryRunning = true;
   if (activeWindow !== win || !isVisible(win)) win.style.zIndex = String(++topZ);
   win.setAttribute('data-visible', '');
   activeWindow = win;
@@ -324,8 +327,11 @@ function pathFilter(): { kind: FilterKind; value: string } | null {
 function closeWindow(win: HTMLElement) {
   articleRequest++;
   const wasActive = activeWindow === win;
-  dockItems.get(win)!.remove();
-  dockItems.delete(win);
+  if (win === library) libraryRunning = false;
+  else {
+    dockItems.get(win)!.remove();
+    dockItems.delete(win);
+  }
   if (windowKind(win) === 'reader') {
     readers.delete(win.dataset.articleUrl!);
     win.remove();
@@ -621,7 +627,7 @@ function applyLanguage(next: Language) {
   document.querySelector<HTMLElement>('[data-language-indicator]')!.textContent = language === 'zh' ? '拼' : 'EN';
   document.querySelectorAll<HTMLButtonElement>('[data-set-language]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.setLanguage === language)));
   document.querySelectorAll<HTMLElement>('[data-post-title], [data-post-description]').forEach((el) => { el.textContent = el.dataset[language]!; });
-  library.setAttribute('aria-label', t('library'));
+  library.setAttribute('aria-label', t('posts'));
   about.setAttribute('aria-label', t('about'));
   updateLibraryLabels();
   for (const reader of readers.values()) {
