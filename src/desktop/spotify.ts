@@ -22,11 +22,16 @@ export function initSpotify(t: (key: string) => string) {
   const pill = bar.querySelector<HTMLElement>('[data-spotify-pill]')!;
   const coverImages = Array.from(bar.querySelectorAll<HTMLImageElement>('[data-spotify-cover]'));
   const panel = bar.querySelector<HTMLElement>('.music-menu')!;
-  const setWavePlaying = initMusicWaves(panel);
-  const timeline = panel.querySelector<HTMLElement>('[data-spotify-timeline]')!;
-  const progress = panel.querySelector<HTMLElement>('[data-spotify-progress]')!;
-  const elapsed = panel.querySelector<HTMLElement>('[data-spotify-elapsed]')!;
-  const duration = panel.querySelector<HTMLElement>('[data-spotify-duration]')!;
+  const quickCard = bar.querySelector<HTMLElement>('.quick-music')!;
+  const quickMenu = quickCard.closest<HTMLElement>('[data-disclosure]')!;
+  const setWavePlaying = initMusicWaves(bar);
+  const timelines = Array.from(bar.querySelectorAll<HTMLElement>('[data-spotify-timeline]'), (element) => ({
+    element,
+    owner: element.closest<HTMLElement>('[data-disclosure]')!,
+    progress: element.querySelector<HTMLElement>('[data-spotify-progress]')!,
+    elapsed: element.querySelector<HTMLElement>('[data-spotify-elapsed]')!,
+    duration: element.querySelector<HTMLElement>('[data-spotify-duration]')!,
+  }));
   const tracks = Array.from(bar.querySelectorAll<HTMLElement>('[data-spotify-playing]'));
   const idle = Array.from(bar.querySelectorAll<HTMLElement>('[data-spotify-idle]'));
   const statuses = Array.from(bar.querySelectorAll<HTMLElement>('[data-spotify-status]'));
@@ -46,9 +51,9 @@ export function initSpotify(t: (key: string) => string) {
     currentCover = url;
     function applyColor(rgb: number[] | null) {
       const css = (values: number[]) => `rgb(${values.join(' ')})`;
-      panel.style.setProperty('--track-color', rgb ? css(rgb) : '');
-      panel.style.setProperty('--wave-dark', rgb ? css(rgb.map((value) => Math.min(255, value + 100))) : '');
-      panel.style.setProperty('--wave-light', rgb ? css(rgb.map((value) => Math.max(25, Math.min(135, Math.floor(value * .55))))) : '');
+      bar!.style.setProperty('--track-color', rgb ? css(rgb) : '');
+      bar!.style.setProperty('--wave-dark', rgb ? css(rgb.map((value) => Math.min(255, value + 100))) : '');
+      bar!.style.setProperty('--wave-light', rgb ? css(rgb.map((value) => Math.max(25, Math.min(135, Math.floor(value * .55))))) : '');
       setWavePlaying(playback.playing);
     }
     if (!url) applyColor(null);
@@ -62,26 +67,31 @@ export function initSpotify(t: (key: string) => string) {
     pill.textContent = playback.playing ? `${playback.title} • ${playback.artist}` : 'Spotify';
   }
 
-  function updateProgress() {
-    if (!playback.playing || typeof playback.progress_ms !== 'number' || !playback.duration_ms) {
-      timeline.hidden = true;
-      return;
-    }
-    const position = Math.min(playback.duration_ms, Math.max(0, playback.progress_ms + performance.now() - sampledAt));
-    const fraction = position / playback.duration_ms;
-    timeline.hidden = false;
-    elapsed.textContent = timecode(position);
-    duration.textContent = timecode(playback.duration_ms);
-    progress.style.setProperty('--position', String(fraction));
-    progress.setAttribute('aria-valuenow', String(Math.round(fraction * 100)));
-  }
-
   function runProgress() {
     clearInterval(timer);
-    if (panel.hasAttribute('data-open') && playback.playing) {
-      updateProgress();
-      timer = window.setInterval(updateProgress, 500);
+    const track = playback;
+    const openTimelines = timelines.filter(({ owner }) =>
+      owner.hasAttribute('data-open') && (owner !== quickMenu || quickCard.clientWidth > 0));
+    if (!openTimelines.length) return;
+    if (!track.playing || typeof track.progress_ms !== 'number' || !track.duration_ms) {
+      openTimelines.forEach(({ element }) => { element.hidden = true; });
+      return;
     }
+    const start = track.progress_ms;
+    const total = track.duration_ms;
+    function update() {
+      const position = Math.min(total, Math.max(0, start + performance.now() - sampledAt));
+      const fraction = position / total;
+      for (const { element, elapsed, duration, progress } of openTimelines) {
+        element.hidden = false;
+        elapsed.textContent = timecode(position);
+        duration.textContent = timecode(total);
+        progress.style.setProperty('--position', String(fraction));
+        progress.setAttribute('aria-valuenow', String(Math.round(fraction * 100)));
+      }
+    }
+    update();
+    timer = window.setInterval(update, 500);
   }
 
   coverImages.forEach((img) => {
@@ -106,8 +116,8 @@ export function initSpotify(t: (key: string) => string) {
       if (track?.cover) img.src = track.cover;
       else img.removeAttribute('src');
     }
-    if (track?.cover) panel.style.setProperty('--track-art', `url("${track.cover.replaceAll('"', '%22')}")`);
-    else panel.style.removeProperty('--track-art');
+    if (track?.cover) bar!.style.setProperty('--track-art', `url("${track.cover.replaceAll('"', '%22')}")`);
+    else bar!.style.removeProperty('--track-art');
     for (const link of links) {
       const url = track?.url;
       link.hidden = !url?.startsWith('https://open.spotify.com/');
@@ -137,10 +147,10 @@ export function initSpotify(t: (key: string) => string) {
     }
   }
 
-  for (const menu of [panel, bar.querySelector<HTMLElement>('.clock-menu')!]) {
+  for (const menu of [panel, quickMenu, bar.querySelector<HTMLElement>('.clock-menu')!]) {
     menu.addEventListener('disclosurechange', () => {
       runProgress();
-      if (menu.hasAttribute('data-open')) void refresh();
+      if (menu.hasAttribute('data-open') && (menu !== quickMenu || quickCard.clientWidth > 0)) void refresh();
     });
   }
   document.addEventListener('visibilitychange', () => {

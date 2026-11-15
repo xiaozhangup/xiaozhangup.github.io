@@ -9,9 +9,6 @@
     --app-header-inset: 6px;
     --app-tools-width: calc(var(--app-control-size) + 2 * var(--app-header-inset));
   }
-  body:has(.music-menu) {
-    --app-tools-width: calc(2 * var(--app-control-size) + 2 * var(--app-header-inset) + 4px);
-  }
 
   .desktop { height: 100dvh; bottom: auto; background: var(--window-bg-color); }
   .dock-anchor, .dock-edge, .desktop-icons { display: none; }
@@ -50,7 +47,7 @@
   .window-header :is(.window-drag, .window-controls), .window .window-edge,
   [data-quick-action='desktop'] { display: none; }
 
-  .window .window-name, .mobile-reader-title, .mobile-about-title {
+  .app-site-title, .mobile-reader-title, .mobile-about-title {
     position: absolute;
     inset: 0 var(--app-tools-width) auto;
     display: block;
@@ -72,7 +69,7 @@
     height: auto;
     padding-inline: var(--app-header-inset);
   }
-  .window--library .sidebar-toggle, .window--library .window-path,
+  .window--library :is(.sidebar-toggle, .window-name, .window-path),
   .window--library .window-location:has(.library-search[hidden]) { display: none; }
   .window-header .app-search-toggle { display: grid; }
   .window--library .window-location {
@@ -180,15 +177,13 @@
   .topbar {
     inset: 0 var(--app-header-inset) auto auto;
     display: flex;
-    gap: 4px;
     padding: 0;
     height: var(--app-header-height);
     color: var(--window-fg-color);
   }
-  .topbar::before, .topbar-start > :not(.music-menu), .clock-menu, .language-menu,
-  .quick-trigger > :not(.app-menu-icon), .topbar:not([data-playing]) .pill-wave { display: none; }
-  .topbar-start { display: contents; }
-  .topbar .shell-trigger, .topbar .music-pill {
+  .topbar::before, .topbar-start, .clock-menu, .language-menu,
+  .quick-trigger > :not(.app-menu-icon) { display: none; }
+  .topbar .shell-trigger {
     width: var(--app-control-size);
     min-width: var(--app-control-size);
     height: var(--app-control-size);
@@ -198,22 +193,30 @@
     color: inherit;
     background: transparent;
   }
-  .topbar :is(.shell-trigger, .music-pill):is(:hover, [aria-expanded='true']) { background: var(--button-hover); }
-  .quick-trigger .app-menu-icon { display: inline-block; width: 16px; height: 16px; }
-  .music-menu { flex: none; }
-  .music-pill { position: relative; justify-content: center; }
-  .music-pill .pill-wave {
-    position: absolute;
-    inset: auto 3px 4px auto;
-    width: 22px;
-    height: 20px;
-    padding: 2px;
-    border-radius: 4px;
-    background: var(--music-bg);
+  :is(.window-header .toolbar-icon, .topbar .shell-trigger) {
+    position: relative;
+    isolation: isolate;
   }
-  .music-pill-label { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); }
-  .music-symbol { width: 24px; height: 24px; }
-  .music-symbol svg { width: 19px; height: 19px; }
+  :is(.window-header .toolbar-icon, .topbar .shell-trigger)::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: 5px;
+    border-radius: 8px;
+    pointer-events: none;
+    transition: background-color var(--control-duration);
+  }
+  :is(.window-header .toolbar-icon, .topbar .shell-trigger):is(:hover, :active, [aria-expanded='true']) {
+    background: transparent;
+  }
+  :is(.window-header .toolbar-icon, .topbar .shell-trigger):is(:hover, :active, [aria-expanded='true'])::before {
+    background: var(--button-hover);
+  }
+  :is(.window-header .toolbar-icon, .topbar .shell-trigger):focus-visible { outline: none; }
+  :is(.window-header .toolbar-icon, .topbar .shell-trigger):focus-visible::before {
+    outline: 2px solid var(--accent-color);
+  }
+  .quick-trigger .app-menu-icon { display: inline-block; width: 16px; height: 16px; }
 
   .topbar .shell-popover {
     top: calc(var(--app-header-height) + 5px);
@@ -229,6 +232,32 @@
     border-color: var(--headerbar-shade-color);
   }
   .quick-grid { display: flex; flex-direction: column; gap: 14px; }
+
+  .quick-music {
+    position: relative;
+    isolation: isolate;
+    display: block;
+    padding: 10px 12px;
+    overflow: clip;
+    border-radius: 12px;
+    background: var(--music-bg);
+    color: var(--music-fg);
+    box-shadow: 0 1px 2px var(--card-shade-color);
+    transition: background-color var(--control-duration);
+  }
+  .quick-music .music-playing { gap: 4px; }
+  .quick-music .music-main { gap: 10px; }
+  .quick-music .music-cover { width: 48px; border-radius: 7px; }
+  .quick-music .music-track { gap: 2px; text-align: start; }
+  .quick-music .music-track :is(strong, span) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .quick-music .music-track strong { font-size: .95rem; }
+  .quick-music .music-footer { gap: 8px; }
+  .quick-music .music-footer:has(> :not([hidden])) { min-height: 44px; }
+  .quick-music .spotify-open { width: 44px; height: 44px; }
   .quick-group { display: block; }
   .quick-group h2 {
     display: block;

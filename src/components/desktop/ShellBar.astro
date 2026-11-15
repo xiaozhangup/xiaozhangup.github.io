@@ -2,6 +2,7 @@
 import { Icon } from 'astro-icon/components';
 import AdwIcon from './AdwIcon.astro';
 import MusicWave from './MusicWave.astro';
+import SpotifyPlayback from './SpotifyPlayback.astro';
 
 const endpoint = import.meta.env.PUBLIC_SPOTIFY_ENDPOINT;
 const email = 'xiaozhangshiw@163.com';
@@ -43,28 +44,7 @@ const email = 'xiaozhangshiw@163.com';
         </button>
 
         <div class="disclosure-panel shell-popover music-popover" id="music-menu" inert>
-          <div class="music-idle" data-spotify-idle>
-            <Icon name="simple-icons:spotify" aria-hidden="true" />
-            <span data-spotify-status>Spotify</span>
-          </div>
-          <div class="music-playing" data-spotify-playing hidden>
-            <div class="music-main">
-              <div class="music-cover"><Icon name="simple-icons:spotify" aria-hidden="true" /><img data-spotify-cover alt="" width="84" height="84" /></div>
-              <div class="music-track">
-                <strong data-spotify-title></strong>
-                <span data-spotify-artist></span>
-              </div>
-              <MusicWave expanded />
-            </div>
-            <div class="music-footer">
-              <div class="music-timeline" data-spotify-timeline hidden>
-                <span class="music-time" data-spotify-elapsed>0:00</span>
-                <div class="music-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="播放进度" data-i18n-aria="playbackProgress" data-spotify-progress><i></i></div>
-                <span class="music-time" data-spotify-duration>0:00</span>
-              </div>
-              <a class="spotify-open" data-spotify-link target="_blank" rel="noopener noreferrer" title="在 Spotify 打开" aria-label="在 Spotify 打开" data-i18n-aria="openSpotify" hidden><Icon name="simple-icons:spotify" aria-hidden="true" /></a>
-            </div>
-          </div>
+          <SpotifyPlayback />
         </div>
       </div>
     )}
@@ -119,6 +99,11 @@ const email = 'xiaozhangshiw@163.com';
       </button>
       <div class="disclosure-panel shell-popover quick-popover" id="quick-settings" inert>
         <div class="quick-grid">
+          {endpoint && (
+            <article class="mobile-only quick-music" aria-label="Spotify 播放状态" data-i18n-aria="spotifyStatus">
+              <SpotifyPlayback compact />
+            </article>
+          )}
           <div class="quick-group quick-preferences">
             <h2 class="mobile-only" data-i18n="preferences">偏好设置</h2>
             <div class="quick-rows">

@@ -26,9 +26,11 @@ export async function coverColor(url: string) {
 // Dynamic Music Pill's centered pulse mode uses a shared timebase with per-bar speeds.
 const pulseSpeeds = [1.1, 1.6, 1.3, 1.8, 1.5, 1.2, 1.7, 1.4];
 
-export function initMusicWaves(menu: HTMLElement) {
-  const waves = [...menu.querySelectorAll<HTMLCanvasElement>('[data-music-wave]')].map((canvas) => ({
+export function initMusicWaves(bar: HTMLElement) {
+  const waves = [...bar.querySelectorAll<HTMLCanvasElement>('[data-music-wave]')].map((canvas) => ({
     canvas,
+    owner: canvas.closest<HTMLElement>('[data-disclosure]')!,
+    inPill: Boolean(canvas.closest('.music-pill')),
     ctx: canvas.getContext('2d')!,
     width: canvas.width,
     height: canvas.height,
@@ -72,8 +74,8 @@ export function initMusicWaves(menu: HTMLElement) {
   }
   function sync() {
     cancelAnimationFrame(frame);
-    activeWaves = waves.filter(({ canvas }) => canvas.clientWidth > 0 &&
-      (canvas.classList.contains('pill-wave') || menu.hasAttribute('data-open')));
+    activeWaves = waves.filter(({ canvas, owner, inPill }) =>
+      canvas.clientWidth > 0 && (inPill || owner.hasAttribute('data-open')));
     color = getComputedStyle(waves[0].canvas).color;
     if (playing && activeWaves.length && !document.hidden && !reducedMotion.matches && document.documentElement.dataset.motion !== 'off') {
       frame = requestAnimationFrame(tick);
@@ -85,7 +87,7 @@ export function initMusicWaves(menu: HTMLElement) {
   const visibility = new ResizeObserver(sync);
   for (const { canvas } of waves) visibility.observe(canvas);
   new MutationObserver(sync).observe(document.documentElement, { attributes: true, attributeFilter: ['data-motion', 'data-theme'] });
-  menu.addEventListener('disclosurechange', sync);
+  for (const owner of new Set(waves.map((wave) => wave.owner))) owner.addEventListener('disclosurechange', sync);
   reducedMotion.addEventListener('change', sync);
   window.addEventListener('resize', sync);
   document.addEventListener('visibilitychange', sync);

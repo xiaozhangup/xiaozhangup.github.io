@@ -1,6 +1,7 @@
 ---
 import { getCollection, type CollectionEntry } from 'astro:content';
 import { Icon } from 'astro-icon/components';
+import { SITE_TITLE } from '@/config';
 import AdwIcon from '@/components/desktop/AdwIcon.astro';
 import ShellBar from '@/components/desktop/ShellBar.astro';
 import ReaderWindow from '@/components/desktop/ReaderWindow.astro';
@@ -91,6 +92,7 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
             <button type="button" class="toolbar-icon sidebar-toggle" data-toggle-sidebar data-i18n-aria="showSidebar" aria-controls="library-sidebar" aria-expanded="true" aria-label="显示或隐藏侧栏" title="显示或隐藏侧栏"><AdwIcon name="sidebar-show" /></button>
             <button type="button" class="toolbar-icon mobile-only app-search-toggle" data-mobile-search data-focus-search data-i18n-aria="searchAction" aria-controls="library-search" aria-expanded={initialFilter === 'search' ? 'true' : 'false'} aria-label="搜索文章" title="搜索文章"><AdwIcon name="system-search" /></button>
             <span class="window-name" data-i18n="posts">文章</span>
+            <span class="mobile-only app-site-title">{SITE_TITLE}</span>
           </div>
           <button type="button" class="window-drag" data-drag-handle data-i18n-aria="moveWindow" aria-label="移动窗口，使用方向键调整位置" title="移动窗口，使用方向键调整位置"></button>
           <div class="window-location">
