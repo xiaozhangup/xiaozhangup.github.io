@@ -2,7 +2,7 @@ import { dismissDisclosure, initDisclosures, openDisclosure } from './disclosure
 import { messages, type Language } from './i18n';
 import { initCalendar } from './shellCalendar';
 import { initSpotify } from './spotify';
-import { animateWindowChange, beginKeyboardResize, bindWindowGeometry, fitWindow, windowBox } from './windowGeometry';
+import { animateDockFlight, animateWindowChange, beginKeyboardResize, bindWindowGeometry, fitWindow, windowBox } from './windowGeometry';
 
 type FilterKind = 'all' | 'categories' | 'tags' | 'archives' | 'search' | 'category' | 'tag';
 type WindowName = 'library' | 'reader' | 'about';
@@ -28,7 +28,8 @@ const activeTitle = document.querySelector<HTMLElement>('[data-active-title]')!;
 const postRows = Array.from(document.querySelectorAll<HTMLElement>('[data-post-row]'));
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const libraryDock = document.querySelector<HTMLAnchorElement>('[data-dock-app="library"]')!;
-const aboutDock = document.querySelector<HTMLAnchorElement>('[data-dock-app="about"]')!;
+const libraryIcon = libraryDock.querySelector<HTMLImageElement>('img')!;
+const profileIcon = document.querySelector<HTMLElement>('.status-profile')!;
 const previewGroup = libraryDock.closest<HTMLElement>('[data-disclosure]')!;
 const previewCards = Array.from(previewGroup.querySelectorAll<HTMLButtonElement>('[data-preview-window]'));
 const sidebarToggle = document.querySelector<HTMLButtonElement>('[data-toggle-sidebar]')!;
@@ -91,8 +92,6 @@ function syncDockApps() {
   libraryDock.dataset.windowCount = String(count);
   libraryDock.classList.toggle('is-running', count > 0);
   libraryDock.classList.toggle('is-active', isVisible(windows[activeWindow]) && articleWindows.includes(activeWindow));
-  aboutDock.classList.toggle('is-running', runningWindows.has('about'));
-  aboutDock.classList.toggle('is-active', activeWindow === 'about' && isVisible(windows.about));
 }
 function syncWindowAccess() {
   for (const [name, win] of Object.entries(windows)) {
@@ -105,8 +104,12 @@ function hideWindow(win: HTMLElement) {
   win.inert = true;
   syncDockApps();
 }
-function focusWindow(name: WindowName) {
+function focusWindow(name: WindowName, origin?: HTMLElement) {
   const win = windows[name];
+  if (origin && !isVisible(win)) {
+    animateDockFlight(win, origin, true, () => focusWindow(name));
+    return;
+  }
   if (!win.hasAttribute('data-active') || !isVisible(win)) win.style.zIndex = String(++topZ);
   win.setAttribute('data-visible', '');
   activeWindow = name;
@@ -141,7 +144,7 @@ function hideSearch() {
   const trigger = searchButton.offsetWidth ? searchButton : windows.library.querySelector<HTMLButtonElement>('[data-disclosure-trigger]')!;
   trigger.focus();
 }
-function setFilter(kind: FilterKind, value = '', updateUrl = false, url = '/blog/') {
+function setFilter(kind: FilterKind, value = '', updateUrl = false, url = '/blog/', origin?: HTMLElement) {
   currentFilter = kind;
   currentValue = value;
   if (updateUrl) {
@@ -162,7 +165,7 @@ function setFilter(kind: FilterKind, value = '', updateUrl = false, url = '/blog
     if (selected) link.setAttribute('aria-current', 'page'); else link.removeAttribute('aria-current');
   });
   filterPosts();
-  focusWindow('library');
+  focusWindow('library', origin);
   if (updateUrl && kind !== 'search') heading.focus();
 }
 function filterPosts() {
@@ -227,7 +230,7 @@ async function openArticle(url: string, updateUrl = true) {
     windows.reader.dataset.articleUrl = new URL(url, location.href).pathname;
     readerContent.scrollTop = 0;
     if (updateUrl) pushUrl(new URL(url, location.href).pathname);
-    focusWindow('reader');
+    focusWindow('reader', libraryIcon);
     syncReaderTitle();
     visibleReaderHeading()?.focus();
   } catch {
@@ -305,20 +308,20 @@ function centerWindow(win: HTMLElement) {
   announce(t('windowCentered'));
 }
 function minimizeWindow(win: HTMLElement) {
-  hideWindow(win);
+  animateDockFlight(win, win === windows.about ? profileIcon : libraryIcon, false, () => hideWindow(win));
   focusNextWindow();
-  (win === windows.about ? aboutDock : libraryDock).focus();
+  (win === windows.about ? profileIcon.closest('button')! : libraryDock).focus();
 }
 
 function activateDockWindow(name: WindowName) {
-  focusWindow(name);
+  focusWindow(name, libraryIcon);
   if (name === 'reader') {
     pushUrl(windows.reader.dataset.articleUrl!);
     syncReaderTitle();
     visibleReaderHeading()?.focus({ preventScroll: true });
   } else {
-    pushUrl(name === 'about' ? '/about/' : libraryUrl);
-    document.title = blogTitle(name === 'about' ? t('aboutShort') : heading.textContent!);
+    pushUrl(libraryUrl);
+    document.title = blogTitle(heading.textContent!);
     windows[name].querySelector<HTMLButtonElement>('[data-drag-handle]')!.focus({ preventScroll: true });
   }
 }
@@ -335,19 +338,19 @@ function openDockPreviews() {
   openDisclosure(previewGroup);
   previewCards.find((card) => card.dataset.previewWindow === activeWindow)!.focus({ preventScroll: true });
 }
-function activateDockApp(app: 'library' | 'about') {
-  if (previewGroup.hasAttribute('data-open') && app === 'library') {
+function activateDockApp() {
+  if (previewGroup.hasAttribute('data-open')) {
     dismissDisclosure(true);
     return;
   }
-  const names = (app === 'library' ? articleWindows : ['about'] as WindowName[]).filter((name) => runningWindows.has(name));
+  const names = articleWindows.filter((name) => runningWindows.has(name));
   if (names.includes(activeWindow) && isVisible(windows[activeWindow])) {
     if (names.length > 1) openDockPreviews();
     else minimizeWindow(windows[activeWindow]);
     return;
   }
   const visible = names.filter((name) => isVisible(windows[name]));
-  activateDockWindow(mostRecentWindow(visible.length ? visible : names) ?? app);
+  activateDockWindow(mostRecentWindow(visible.length ? visible : names) ?? 'library');
 }
 
 root.addEventListener('click', (event) => {
@@ -400,9 +403,9 @@ root.addEventListener('click', (event) => {
   }
   const anchor = target.closest<HTMLAnchorElement>('a[href]');
   if (!anchor || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || anchor.target === '_blank' || anchor.hasAttribute('download')) return;
-  if (anchor.dataset.dockApp) {
+  if (anchor === libraryDock) {
     event.preventDefault();
-    activateDockApp(anchor.dataset.dockApp as 'library' | 'about');
+    activateDockApp();
     return;
   }
   if (anchor.hasAttribute('data-open-article')) { event.preventDefault(); void openArticle(anchor.href); return; }
@@ -412,7 +415,8 @@ root.addEventListener('click', (event) => {
     event.preventDefault();
     windows.library.classList.remove('sidebar-open');
     syncSidebar();
-    setFilter(anchor.dataset.desktopFilter as FilterKind, anchor.dataset.value || '', true, anchor.pathname);
+    const icon = dock.contains(anchor) ? anchor.querySelector('img')! : undefined;
+    setFilter(anchor.dataset.desktopFilter as FilterKind, anchor.dataset.value || '', true, anchor.pathname, icon);
     if (anchor.dataset.desktopFilter === 'search') searchInput.focus();
   }
 });
@@ -508,18 +512,6 @@ window.addEventListener('resize', () => {
 
 const themeButton = document.querySelector<HTMLButtonElement>('[data-theme-toggle]')!;
 const motionButton = document.querySelector<HTMLButtonElement>('[data-motion-toggle]')!;
-const systemStatus = document.querySelector<HTMLButtonElement>('[data-system-status]')!;
-const networkStatus = document.getElementById('browser-network-status')!;
-function updateNetworkStatus() {
-  const offline = !navigator.onLine;
-  const key = offline ? 'networkOffline' : 'networkOnline';
-  systemStatus.toggleAttribute('data-offline', offline);
-  networkStatus.dataset.i18n = key;
-  networkStatus.textContent = t(key);
-}
-window.addEventListener('online', updateNetworkStatus);
-window.addEventListener('offline', updateNetworkStatus);
-updateNetworkStatus();
 function applyTheme(theme: string) {
   document.documentElement.dataset.theme = theme;
   themeButton.setAttribute('aria-pressed', String(theme === 'dark'));
@@ -566,9 +558,8 @@ function applyLanguage(next: Language) {
   document.querySelectorAll<HTMLButtonElement>('[data-set-language]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.setLanguage === language)));
   document.querySelectorAll<HTMLElement>('[data-post-title], [data-post-description]').forEach((el) => { el.textContent = el.dataset[language]!; });
   const dockLabels: [string, string][] = [
-    ['[data-dock-app="library"]', 'posts'], ['[data-dock-app="about"]', 'openAbout'],
+    ['[data-dock-app="library"]', 'posts'],
     ['.dock [data-desktop-filter="categories"]', 'openCategories'], ['.dock [data-desktop-filter="tags"]', 'openTags'],
-    ['.dock a[href="/rss.xml"]', 'rss'],
   ];
   for (const [selector, key] of dockLabels) {
     const item = document.querySelector<HTMLElement>(selector)!;
@@ -611,10 +602,12 @@ document.querySelector<HTMLButtonElement>('[data-copy-email]')!.addEventListener
 document.querySelectorAll<HTMLButtonElement>('[data-quick-action]').forEach((button) => button.addEventListener('click', () => {
   const action = button.dataset.quickAction;
   if (action === 'library') setFilter('all', '', true, '/blog/');
-  else if (action === 'about') { pushUrl('/about/'); focusWindow('about'); document.title = blogTitle(t('aboutShort')); }
+  else if (action === 'about') { pushUrl('/about/'); focusWindow('about', profileIcon); document.title = blogTitle(t('aboutShort')); }
   else {
     articleRequest++;
-    Object.values(windows).forEach(hideWindow);
+    for (const win of Object.values(windows)) {
+      if (isVisible(win)) animateDockFlight(win, win === windows.about ? profileIcon : libraryIcon, false, () => hideWindow(win));
+    }
     activeTitle.textContent = t('desktop');
     document.title = blogTitle(t('desktop'));
   }

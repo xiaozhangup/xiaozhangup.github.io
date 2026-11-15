@@ -71,6 +71,46 @@ export function animateWindowChange(win: HTMLElement, update: () => void) {
   geometryAnimations.set(win, animation);
 }
 
+export function animateDockFlight(win: HTMLElement, icon: HTMLElement, showing: boolean, update: () => void) {
+  const wasFlying = win.hasAttribute('data-dock-flight');
+  const startRect = wasFlying ? win.getBoundingClientRect() : null;
+  const startOpacity = wasFlying ? Number(getComputedStyle(win).opacity) : undefined;
+  geometryAnimations.get(win)?.cancel();
+
+  if (reducedMotion.matches || document.documentElement.dataset.motion === 'off') {
+    win.removeAttribute('data-dock-flight');
+    update();
+    return;
+  }
+
+  win.setAttribute('data-dock-flight', '');
+  update();
+  const { left, right, top, bottom } = windowBox(win);
+  const iconRect = icon.getBoundingClientRect();
+  const dock = icon.closest('.dock');
+  const dockOffset = dock ? dock.parentElement!.getBoundingClientRect().left - dock.getBoundingClientRect().left : 0;
+  const centerX = (left + right) / 2;
+  const centerY = (top + bottom) / 2;
+  const scale = Math.min(iconRect.width / (right - left), iconRect.height / (bottom - top));
+  const transform = (x: number, y: number, size: number) => `translate(${x - centerX}px, ${y - centerY}px) scale(${size})`;
+  const dockFrame = { opacity: 0, transform: transform(iconRect.x + iconRect.width / 2 + dockOffset, iconRect.y + iconRect.height / 2, scale) };
+  const windowFrame = { opacity: 1, transform: 'none' };
+  const start = startRect ? {
+    opacity: startOpacity,
+    transform: transform(startRect.x + startRect.width / 2, startRect.y + startRect.height / 2, startRect.width / (right - left)),
+  } : showing ? dockFrame : windowFrame;
+  const animation = win.animate([start, showing ? windowFrame : dockFrame], {
+    duration: showing ? 250 : 220,
+    easing: showing ? 'cubic-bezier(.18,.72,.24,1)' : 'cubic-bezier(.55,.08,.76,.5)',
+  });
+  geometryAnimations.set(win, animation);
+  const cleanup = () => {
+    if (geometryAnimations.get(win) === animation) win.removeAttribute('data-dock-flight');
+  };
+  animation.onfinish = cleanup;
+  animation.oncancel = cleanup;
+}
+
 export function beginKeyboardResize(win: HTMLElement) {
   win.setAttribute('data-keyboard-resize', '');
   win.querySelector<HTMLButtonElement>('[data-drag-handle]')!.focus({ preventScroll: true });

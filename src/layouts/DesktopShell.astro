@@ -75,10 +75,6 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
         </div>
         <a class="dock-item" href="/blog/categories/" data-desktop-filter="categories" data-tooltip="分类" aria-label="打开分类"><img class="dock-app" src="/adwaita/color/folder-projects.svg" alt="" /></a>
         <a class="dock-item" href="/blog/tags/" data-desktop-filter="tags" data-tooltip="标签" aria-label="打开标签"><img class="dock-app" src="/adwaita/color/user-bookmarks.svg" alt="" /></a>
-        <div class="dock-separator"></div>
-        <a class:list={['dock-item', initialWindow === 'about' && 'is-running']} href="/about/" data-dock-app="about" data-tooltip="关于" aria-label="关于博客"><img class="dock-app" src="/adwaita/color/avatar-default.svg" alt="" /><span class="dock-dot"></span></a>
-        <div class="dock-spacer"></div>
-        <a class="dock-item" href="/rss.xml" data-tooltip="RSS 订阅" aria-label="RSS 订阅"><span class="dock-symbol dock-symbol--rss"><AdwIcon name="application-rss+xml" /></span></a>
       </nav>
       </div>
 

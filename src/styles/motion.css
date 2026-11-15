@@ -11,6 +11,7 @@
   scale: var(--panel-scale, .98);
   transition:
     opacity var(--panel-exit, 145ms) ease-out,
+    background-color var(--control-duration),
     translate var(--panel-exit, 145ms) var(--motion-ease),
     scale var(--panel-exit, 145ms) var(--motion-ease),
     visibility 0s var(--panel-exit, 145ms);
@@ -23,6 +24,7 @@
   pointer-events: auto;
   transition:
     opacity var(--panel-enter, 165ms) ease-out,
+    background-color var(--control-duration),
     translate var(--panel-enter, 165ms) var(--panel-ease, var(--motion-ease)),
     scale var(--panel-enter, 165ms) var(--panel-ease, var(--motion-ease)),
     visibility 0s;
@@ -41,6 +43,14 @@
   transition:
     opacity 175ms ease-out, translate 190ms var(--motion-ease), scale 190ms var(--motion-ease),
     visibility 0s, color var(--control-duration), background-color var(--control-duration), box-shadow 200ms ease-out;
+}
+
+.window[data-dock-flight] {
+  visibility: visible;
+  z-index: 9998 !important;
+  translate: none;
+  scale: none;
+  transition: none;
 }
 
 .window-control::before,

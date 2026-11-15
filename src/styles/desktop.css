@@ -89,14 +89,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
 .dock-item:hover::after, .dock-item:focus-visible::after { opacity: 1; }
 .dock-item[aria-expanded='true']::after { opacity: 0; }
 .dock-app { display: block; width: 42px; height: 42px; object-fit: contain; }
-.dock-symbol { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 10px; color: #fff; background: #47474c; }
-.dock-symbol .adw-icon, .dock-symbol svg { width: 21px; height: 21px; }
-.dock-symbol--rss { background: #d66a20; }
 .dock-dot { position: absolute; left: -5px; width: 4px; height: 4px; border-radius: 50%; background: #fff; }
 .dock-item:not(.is-running) .dock-dot { opacity: 0; }
 .dock-item[data-window-count='2'] .dock-dot { box-shadow: 0 7px #fff; transform: translateY(-3.5px); }
-.dock-separator { height: 1px; width: 38px; margin: 3px 0; background: #ffffff2a; }
-.dock-spacer { flex: 1; }
 .dock-app-group { position: relative; }
 .dock-app-group .dock-previews {
   --panel-shift: 0;
@@ -458,11 +453,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
   .dock { gap: 2px; padding: 6px 3px; border-radius: 14px; }
   .dock-item { width: 40px; height: 40px; }
   .dock-app { width: 36px; height: 36px; }
-  .dock-symbol { width: 32px; height: 32px; border-radius: 8px; }
-  .dock-symbol .adw-icon, .dock-symbol svg { width: 19px; height: 19px; }
   .dock-item::after { display: none; }
   .dock-dot { left: -2px; }
-  .dock-separator { width: 30px; }
   .window--library, .window--reader, .window--about {
     left: 53px;
     top: calc(var(--shell-height) + 6px);

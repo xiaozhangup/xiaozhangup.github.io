@@ -39,7 +39,7 @@ const email = 'xiaozhangshiw@163.com';
             <img data-spotify-cover alt="" width="18" height="18" />
           </span>
           <span class="music-pill-label" data-spotify-pill>Spotify</span>
-          <MusicWave />
+          <canvas class="pill-wave" data-pill-wave width="18" height="14" aria-hidden="true"></canvas>
         </button>
 
         <div class="disclosure-panel shell-popover music-popover" id="music-menu" inert>
@@ -54,7 +54,7 @@ const email = 'xiaozhangshiw@163.com';
                 <strong data-spotify-title></strong>
                 <span data-spotify-artist></span>
               </div>
-              <MusicWave expanded />
+              <MusicWave />
             </div>
             <div class="music-footer">
               <div class="music-timeline" data-spotify-timeline hidden>
@@ -78,7 +78,7 @@ const email = 'xiaozhangshiw@163.com';
       {endpoint && (
         <div class="clock-media">
           <div class="clock-media-card">
-            <div class="clock-media-heading"><Icon name="simple-icons:spotify" aria-hidden="true" /> Spotify</div>
+            <div class="clock-media-heading"><Icon name="simple-icons:spotify" aria-hidden="true" /> Spotify <span data-i18n="listeningNow" data-spotify-playing hidden>我正在听</span></div>
             <div class="clock-media-idle" data-spotify-status data-spotify-idle>正在读取播放状态</div>
             <div class="clock-media-track" data-spotify-playing hidden>
               <div class="music-cover"><Icon name="simple-icons:spotify" aria-hidden="true" /><img data-spotify-cover alt="" width="40" height="40" /></div>
@@ -110,15 +110,12 @@ const email = 'xiaozhangshiw@163.com';
       </div>
     </div>
     <div class="shell-menu" data-disclosure data-align="end">
-      <button type="button" class="shell-trigger quick-trigger" data-system-status data-disclosure-trigger aria-controls="quick-settings" aria-expanded="false" aria-describedby="browser-network-status" data-i18n-aria="quickSettings" aria-label="快捷设置">
-        <AdwIcon name="network-workgroup" class="status-online" />
-        <AdwIcon name="network-offline" class="status-offline" />
-        {endpoint && <AdwIcon name="audio-volume-high" class="status-playing" />}
+      <button type="button" class="shell-trigger quick-trigger" data-disclosure-trigger aria-controls="quick-settings" aria-expanded="false" data-i18n-aria="quickSettings" aria-label="快捷设置">
+        {endpoint && <AdwIcon name="audio-x-generic" class="status-playing" />}
         <AdwIcon name="weather-clear-night" class="status-dark" />
         <AdwIcon name="weather-clear" class="status-light" />
-        <AdwIcon name="emblem-system" />
+        <AdwIcon name="avatar-default" class="status-profile" />
       </button>
-      <span class="visually-hidden" id="browser-network-status" data-i18n="networkOnline">浏览器已联网</span>
       <div class="disclosure-panel shell-popover quick-popover" id="quick-settings" inert>
         <div class="quick-grid">
           <button type="button" class="quick-action" data-theme-toggle aria-pressed="true"><AdwIcon name="weather-clear-night" /><span data-i18n="darkStyle">暗色样式</span></button>
@@ -126,6 +123,7 @@ const email = 'xiaozhangshiw@163.com';
           <button type="button" class="quick-action" data-quick-action="library"><AdwIcon name="text-x-generic" /><span data-i18n="allPosts">全部文章</span></button>
           <button type="button" class="quick-action" data-quick-action="desktop"><AdwIcon name="user-desktop" /><span data-i18n="showDesktop">显示桌面</span></button>
           <button type="button" class="quick-action quick-action--wide" data-quick-action="about"><AdwIcon name="dialog-information" /><span data-i18n="about">关于博客</span><AdwIcon name="go-next" /></button>
+          <a class="quick-action quick-action--wide" href="/rss.xml"><AdwIcon name="application-rss+xml" /><span data-i18n="rss">RSS 订阅</span><AdwIcon name="go-next" /></a>
         </div>
       </div>
     </div>

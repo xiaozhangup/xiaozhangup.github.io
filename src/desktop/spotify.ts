@@ -1,3 +1,5 @@
+import { coverColor, initPillWave } from './musicVisuals';
+
 type Playback = {
   playing: true;
   title: string;
@@ -20,6 +22,7 @@ export function initSpotify(t: (key: string) => string) {
   const pill = bar.querySelector<HTMLElement>('[data-spotify-pill]')!;
   const coverImages = Array.from(bar.querySelectorAll<HTMLImageElement>('[data-spotify-cover]'));
   const panel = bar.querySelector<HTMLElement>('.music-menu')!;
+  const setWavePlaying = initPillWave(panel.querySelector<HTMLCanvasElement>('[data-pill-wave]')!);
   const timeline = panel.querySelector<HTMLElement>('[data-spotify-timeline]')!;
   const progress = panel.querySelector<HTMLElement>('[data-spotify-progress]')!;
   const elapsed = panel.querySelector<HTMLElement>('[data-spotify-elapsed]')!;
@@ -37,6 +40,18 @@ export function initSpotify(t: (key: string) => string) {
   let lastFetch = -Infinity;
   let refreshing = false;
   let timer: number | undefined;
+  let currentCover: string | undefined;
+  function updateCoverColor(url: string | undefined) {
+    if (url === currentCover) return;
+    currentCover = url;
+    if (!url) {
+      panel.style.removeProperty('--track-color');
+      return;
+    }
+    void coverColor(url).catch(() => '').then((color) => {
+      if (currentCover === url) panel.style.setProperty('--track-color', color);
+    });
+  }
   function renderText() {
     const status = t(state === 'idle' ? 'spotifyIdle' : state === 'unavailable' ? 'spotifyUnavailable' : 'spotifyLoading');
     statuses.forEach((text) => { text.textContent = status; });
@@ -73,6 +88,8 @@ export function initSpotify(t: (key: string) => string) {
   function render() {
     const track = playback.playing ? playback : null;
     bar!.toggleAttribute('data-playing', Boolean(track));
+    setWavePlaying(Boolean(track));
+    updateCoverColor(track?.cover);
     tracks.forEach((node) => { node.hidden = !track; });
     idle.forEach((node) => { node.hidden = Boolean(track); });
     if (track) {
