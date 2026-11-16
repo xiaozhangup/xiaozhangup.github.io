@@ -67,7 +67,7 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
   <body data-initial-window={initialWindow} data-initial-filter={initialFilter} data-filter-value={filterValue}>
     <a class="skip-link" href="#desktop-main" data-i18n="skipToContent">跳到主要内容</a>
     <ShellBar />
-    <main id="desktop-main" class="desktop" tabindex="-1">
+    <main id="desktop-main" class="desktop" data-workspace="1" tabindex="-1">
       <button type="button" class="dock-edge" data-dock-edge aria-label="显示桌面应用" data-i18n-aria="showDock" aria-controls="desktop-dock" aria-expanded="false" hidden></button>
       <div class="dock-anchor" data-dock-anchor>
         <nav class="dock" id="desktop-dock" data-i18n-aria="desktopApps" aria-label="桌面应用">
@@ -79,159 +79,162 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
       </div>
       <template data-dock-template><DockWindow kind="library" label="" href="/blog/" /></template>
 
-      <p class="visually-hidden" id="desktop-shortcut-help" data-i18n="moveShortcut">可用方向键移动桌面图标，按 Delete 移至回收站。</p>
-      <p class="visually-hidden" id="desktop-trash-help" data-i18n="moveTrash">可用方向键移动回收站。</p>
-      <div class="desktop-icons" data-i18n-aria="desktopShortcuts" aria-label="桌面快捷方式">
-        <button type="button" class="desktop-shortcut desktop-trash" data-desktop-trash aria-describedby="desktop-trash-help">
-          <img src="/adwaita/color/user-trash.svg" alt="" /><span data-i18n="trash">回收站</span>
-        </button>
-        {shortcuts.map((item) => {
-          const label = labelPair(item.label);
-          return (
-            <a href={item.href} target={item.newTab === false ? undefined : "_blank"} rel={item.newTab === false ? undefined : "noopener noreferrer"} class="desktop-shortcut" data-shortcut-side="left" aria-describedby="desktop-shortcut-help">
-              <img src={item.icon} alt="" /><span data-label-zh={label.zh} data-label-en={label.en}>{label.zh}</span>
-            </a>
-          );
-        })}
-        <a href="/blog/" data-open-library class="desktop-shortcut" aria-describedby="desktop-shortcut-help"><img src="/adwaita/color/folder-documents.svg" alt="" /><span data-i18n="posts">文章</span></a>
-        <a href="/blog/archives/" data-desktop-filter="archives" class="desktop-shortcut" aria-describedby="desktop-shortcut-help"><img src="/adwaita/color/folder-projects.svg" alt="" /><span data-i18n="archives">归档</span></a>
-        <a href="/about/" data-open-about class="desktop-shortcut" aria-describedby="desktop-shortcut-help"><img src="/adwaita/color/help-about.svg" alt="" /><span data-i18n="aboutShort">关于</span></a>
-        <a href="/music/" data-open-music class="desktop-shortcut" aria-describedby="desktop-shortcut-help"><img src="/adwaita/color/gnome-music.svg" alt="" /><span data-i18n="music">音乐</span></a>
-      </div>
+      <section class="desktop-workspace" id="workspace-one" aria-label="工作区 1" data-i18n-aria="workspaceOne">
+        <p class="visually-hidden" id="desktop-shortcut-help" data-i18n="moveShortcut">可用方向键移动桌面图标，按 Delete 移至回收站。</p>
+        <p class="visually-hidden" id="desktop-trash-help" data-i18n="moveTrash">可用方向键移动回收站。</p>
+        <div class="desktop-icons" data-i18n-aria="desktopShortcuts" aria-label="桌面快捷方式">
+          <button type="button" class="desktop-shortcut desktop-trash" data-desktop-trash aria-describedby="desktop-trash-help">
+            <img src="/adwaita/color/user-trash.svg" alt="" /><span data-i18n="trash">回收站</span>
+          </button>
+          {shortcuts.map((item) => {
+            const label = labelPair(item.label);
+            return (
+              <a href={item.href} target={item.newTab === false ? undefined : "_blank"} rel={item.newTab === false ? undefined : "noopener noreferrer"} class="desktop-shortcut" data-shortcut-side="left" aria-describedby="desktop-shortcut-help">
+                <img src={item.icon} alt="" /><span data-label-zh={label.zh} data-label-en={label.en}>{label.zh}</span>
+              </a>
+            );
+          })}
+          <a href="/blog/" data-open-library class="desktop-shortcut" aria-describedby="desktop-shortcut-help"><img src="/adwaita/color/folder-documents.svg" alt="" /><span data-i18n="posts">文章</span></a>
+          <a href="/blog/archives/" data-desktop-filter="archives" class="desktop-shortcut" aria-describedby="desktop-shortcut-help"><img src="/adwaita/color/folder-projects.svg" alt="" /><span data-i18n="archives">归档</span></a>
+          <a href="/about/" data-open-about class="desktop-shortcut" aria-describedby="desktop-shortcut-help"><img src="/adwaita/color/help-about.svg" alt="" /><span data-i18n="aboutShort">关于</span></a>
+          <a href="/music/" data-open-music class="desktop-shortcut" aria-describedby="desktop-shortcut-help"><img src="/adwaita/color/gnome-music.svg" alt="" /><span data-i18n="music">音乐</span></a>
+        </div>
 
-      <section class="window window--library" data-window="library" data-visible data-active={initialWindow === 'library' ? '' : undefined} aria-label="文章">
-        <header class="window-header">
-          <div class="window-header-leading">
-            <button type="button" class="toolbar-icon sidebar-toggle" data-toggle-sidebar data-i18n-aria="showSidebar" aria-controls="library-sidebar" aria-expanded="true" aria-label="显示或隐藏侧栏" title="显示或隐藏侧栏"><AdwIcon name="sidebar-show" /></button>
-            <button type="button" class="toolbar-icon mobile-only app-search-toggle" data-mobile-search data-focus-search data-i18n-aria="searchAction" aria-controls="library-search" aria-expanded={initialFilter === 'search' ? 'true' : 'false'} aria-label="搜索文章" title="搜索文章"><AdwIcon name="system-search" /></button>
-            <span class="window-name" data-i18n="posts">文章</span>
-            <span class="mobile-only app-site-title">{SITE_TITLE}</span>
-          </div>
-          <button type="button" class="window-drag" data-drag-handle data-i18n-aria="moveWindow" aria-label="移动窗口，使用方向键调整位置" title="移动窗口，使用方向键调整位置"></button>
-          <div class="window-location">
-            <div class="window-path" data-library-path hidden={initialFilter === 'search'}>
-              <AdwIcon name="user-home" /><span data-breadcrumb>{filterLabels[initialFilter]}</span>
+        <section class="window window--library" data-window="library" data-visible data-active={initialWindow === 'library' ? '' : undefined} aria-label="文章">
+          <header class="window-header">
+            <div class="window-header-leading">
+              <button type="button" class="toolbar-icon sidebar-toggle" data-toggle-sidebar data-i18n-aria="showSidebar" aria-controls="library-sidebar" aria-expanded="true" aria-label="显示或隐藏侧栏" title="显示或隐藏侧栏"><AdwIcon name="sidebar-show" /></button>
+              <button type="button" class="toolbar-icon mobile-only app-search-toggle" data-mobile-search data-focus-search data-i18n-aria="searchAction" aria-controls="library-search" aria-expanded={initialFilter === 'search' ? 'true' : 'false'} aria-label="搜索文章" title="搜索文章"><AdwIcon name="system-search" /></button>
+              <span class="window-name" data-i18n="posts">文章</span>
+              <span class="mobile-only app-site-title">{SITE_TITLE}</span>
             </div>
-            <form class="library-search" id="library-search" action="/blog/search/" role="search" data-search-form hidden={initialFilter !== 'search'}>
-              <AdwIcon name="folder-saved-search" />
-              <input type="search" name="q" placeholder="搜索文章、分类或标签" aria-label="搜索文章、分类或标签" data-i18n-placeholder="searchPlaceholder" data-i18n-aria="searchPlaceholder" data-search />
-            </form>
-          </div>
-          <div class="window-controls">
-            <button type="button" class="toolbar-icon" data-focus-search data-i18n-aria="searchAction" aria-controls="library-search" aria-expanded={initialFilter === 'search' ? 'true' : 'false'} aria-label="搜索文章" title="搜索文章"><AdwIcon name="folder-saved-search" /></button>
-            <WindowControls name="library" />
-          </div>
-        </header>
+            <button type="button" class="window-drag" data-drag-handle data-i18n-aria="moveWindow" aria-label="移动窗口，使用方向键调整位置" title="移动窗口，使用方向键调整位置"></button>
+            <div class="window-location">
+              <div class="window-path" data-library-path hidden={initialFilter === 'search'}>
+                <AdwIcon name="user-home" /><span data-breadcrumb>{filterLabels[initialFilter]}</span>
+              </div>
+              <form class="library-search" id="library-search" action="/blog/search/" role="search" data-search-form hidden={initialFilter !== 'search'}>
+                <AdwIcon name="folder-saved-search" />
+                <input type="search" name="q" placeholder="搜索文章、分类或标签" aria-label="搜索文章、分类或标签" data-i18n-placeholder="searchPlaceholder" data-i18n-aria="searchPlaceholder" data-search />
+              </form>
+            </div>
+            <div class="window-controls">
+              <button type="button" class="toolbar-icon" data-focus-search data-i18n-aria="searchAction" aria-controls="library-search" aria-expanded={initialFilter === 'search' ? 'true' : 'false'} aria-label="搜索文章" title="搜索文章"><AdwIcon name="folder-saved-search" /></button>
+              <WindowControls name="library" />
+            </div>
+          </header>
 
-        <div class="library-layout">
-          <aside class="library-sidebar" id="library-sidebar">
-            <nav class="library-nav" data-i18n-aria="postNavigation" aria-label="文章导航">
-              {navItems.map((item) => (
-                <a href={item.href} data-desktop-filter={item.kind} class:list={['side-link', item.selected && 'is-selected']}>
-                  <AdwIcon name={item.icon} /><span data-i18n={item.kind === 'all' ? 'allPosts' : item.kind}>{item.label}</span>
-                </a>
-              ))}
-            </nav>
-            {categories.length > 0 && (
-              <nav class="library-nav library-nav--sub" data-i18n-aria="postCategories" aria-label="文章分类">
-                {categories.map((category) => (
-                  <a href={`/blog/category/${encodeURIComponent(category)}/`} data-desktop-filter="category" data-value={category} class:list={['side-link', initialFilter === 'category' && filterValue === category && 'is-selected']}>
-                    <AdwIcon name="folder" /><span>{category}</span>
+          <div class="library-layout">
+            <aside class="library-sidebar" id="library-sidebar">
+              <nav class="library-nav" data-i18n-aria="postNavigation" aria-label="文章导航">
+                {navItems.map((item) => (
+                  <a href={item.href} data-desktop-filter={item.kind} class:list={['side-link', item.selected && 'is-selected']}>
+                    <AdwIcon name={item.icon} /><span data-i18n={item.kind === 'all' ? 'allPosts' : item.kind}>{item.label}</span>
                   </a>
                 ))}
               </nav>
-            )}
-          </aside>
-          <div class="library-main">
-            <div class="library-scroll">
-              <div class="library-summary">
-                <h1 class="library-heading" data-library-heading tabindex="-1">{filterLabels[initialFilter]}</h1>
-                <span class="window-status" data-status-count>{posts.length} 篇文章</span>
-              </div>
-              <div class="folder-grid" data-category-chips hidden={initialFilter !== 'categories'}>
-                {categories.map((category) => (
-                  <a class="folder-item" href={`/blog/category/${encodeURIComponent(category)}/`} data-desktop-filter="category" data-value={category}>
-                    <img src="/adwaita/color/folder-documents.svg" width="48" height="48" alt="" /><span>{category}</span>
-                  </a>
-                ))}
-                {categories.length === 0 && <p class="empty-list" data-i18n="noCategories">暂无分类</p>}
-              </div>
-              <div class="folder-grid" data-tag-chips hidden={initialFilter !== 'tags'}>
-                {tags.map((tag) => (
-                  <a class="folder-item" href={`/blog/tag/${encodeURIComponent(tag)}/`} data-desktop-filter="tag" data-value={tag}>
-                    <img src="/adwaita/color/user-bookmarks.svg" width="48" height="48" alt="" /><span>{tag}</span>
-                  </a>
-                ))}
-                {tags.length === 0 && <p class="empty-list" data-i18n="noTags">暂无标签</p>}
-              </div>
-
-              <div class="files-view" data-files-view hidden={initialFilter === 'categories' || initialFilter === 'tags'}>
-                <div class="file-columns" aria-hidden="true">
-                  <span data-i18n="name">名称</span><span class="file-date" data-i18n="published">发布日期</span>
+              {categories.length > 0 && (
+                <nav class="library-nav library-nav--sub" data-i18n-aria="postCategories" aria-label="文章分类">
+                  {categories.map((category) => (
+                    <a href={`/blog/category/${encodeURIComponent(category)}/`} data-desktop-filter="category" data-value={category} class:list={['side-link', initialFilter === 'category' && filterValue === category && 'is-selected']}>
+                      <AdwIcon name="folder" /><span>{category}</span>
+                    </a>
+                  ))}
+                </nav>
+              )}
+            </aside>
+            <div class="library-main">
+              <div class="library-scroll">
+                <div class="library-summary">
+                  <h1 class="library-heading" data-library-heading tabindex="-1">{filterLabels[initialFilter]}</h1>
+                  <span class="window-status" data-status-count>{posts.length} 篇文章</span>
                 </div>
-                <div class="post-list" data-post-list>
-                  {posts.map((post) => {
-                    const translated = translations.get(translationKey(post));
-                    const matches = initialFilter === 'category' ? (post.data.categories ?? []).includes(filterValue) : initialFilter === 'tag' ? (post.data.tags ?? []).includes(filterValue) : true;
-                    return (
-                      <article class="post-row" data-post-row data-title={post.data.title.toLocaleLowerCase()} data-description={post.data.description.toLocaleLowerCase()} data-title-en={translated?.data.title.toLocaleLowerCase()} data-description-en={translated?.data.description.toLocaleLowerCase()} data-categories={JSON.stringify(post.data.categories ?? [])} data-tags={JSON.stringify(post.data.tags ?? [])} hidden={!matches}>
-                        <a class="post-main" href={`/blog/${post.id}/`} data-open-article>
-                          <span class="post-name">
-                            <img src="/adwaita/color/text-x-generic.svg" width="32" height="32" alt="" />
-                            <span class="post-copy">
-                              <strong data-post-title data-zh={post.data.title} data-en={translated?.data.title ?? post.data.title}>{post.data.title}</strong>
-                              <small data-post-description data-zh={post.data.description} data-en={translated?.data.description ?? post.data.description}>{post.data.description}</small>
+                <div class="folder-grid" data-category-chips hidden={initialFilter !== 'categories'}>
+                  {categories.map((category) => (
+                    <a class="folder-item" href={`/blog/category/${encodeURIComponent(category)}/`} data-desktop-filter="category" data-value={category}>
+                      <img src="/adwaita/color/folder-documents.svg" width="48" height="48" alt="" /><span>{category}</span>
+                    </a>
+                  ))}
+                  {categories.length === 0 && <p class="empty-list" data-i18n="noCategories">暂无分类</p>}
+                </div>
+                <div class="folder-grid" data-tag-chips hidden={initialFilter !== 'tags'}>
+                  {tags.map((tag) => (
+                    <a class="folder-item" href={`/blog/tag/${encodeURIComponent(tag)}/`} data-desktop-filter="tag" data-value={tag}>
+                      <img src="/adwaita/color/user-bookmarks.svg" width="48" height="48" alt="" /><span>{tag}</span>
+                    </a>
+                  ))}
+                  {tags.length === 0 && <p class="empty-list" data-i18n="noTags">暂无标签</p>}
+                </div>
+
+                <div class="files-view" data-files-view hidden={initialFilter === 'categories' || initialFilter === 'tags'}>
+                  <div class="file-columns" aria-hidden="true">
+                    <span data-i18n="name">名称</span><span class="file-date" data-i18n="published">发布日期</span>
+                  </div>
+                  <div class="post-list" data-post-list>
+                    {posts.map((post) => {
+                      const translated = translations.get(translationKey(post));
+                      const matches = initialFilter === 'category' ? (post.data.categories ?? []).includes(filterValue) : initialFilter === 'tag' ? (post.data.tags ?? []).includes(filterValue) : true;
+                      return (
+                        <article class="post-row" data-post-row data-title={post.data.title.toLocaleLowerCase()} data-description={post.data.description.toLocaleLowerCase()} data-title-en={translated?.data.title.toLocaleLowerCase()} data-description-en={translated?.data.description.toLocaleLowerCase()} data-categories={JSON.stringify(post.data.categories ?? [])} data-tags={JSON.stringify(post.data.tags ?? [])} hidden={!matches}>
+                          <a class="post-main" href={`/blog/${post.id}/`} data-open-article>
+                            <span class="post-name">
+                              <img src="/adwaita/color/text-x-generic.svg" width="32" height="32" alt="" />
+                              <span class="post-copy">
+                                <strong data-post-title data-zh={post.data.title} data-en={translated?.data.title ?? post.data.title}>{post.data.title}</strong>
+                                <small data-post-description data-zh={post.data.description} data-en={translated?.data.description ?? post.data.description}>{post.data.description}</small>
+                              </span>
                             </span>
-                          </span>
-                          <time class="file-date post-date" datetime={post.data.pubDate.toISOString()}>{date(post.data.pubDate)}</time>
-                          <AdwIcon class="app-post-chevron mobile-only" name="go-next" />
-                        </a>
-                      </article>
-                    );
-                  })}
-                  <div class="empty-list" data-empty-list hidden>
-                    <AdwIcon name="system-search" /><strong data-i18n="noResults">没有找到文章</strong><span data-i18n="tryAnotherSearch">换个关键词或查看全部文章。</span>
+                            <time class="file-date post-date" datetime={post.data.pubDate.toISOString()}>{date(post.data.pubDate)}</time>
+                            <AdwIcon class="app-post-chevron mobile-only" name="go-next" />
+                          </a>
+                        </article>
+                      );
+                    })}
+                    <div class="empty-list" data-empty-list hidden>
+                      <AdwIcon name="system-search" /><strong data-i18n="noResults">没有找到文章</strong><span data-i18n="tryAnotherSearch">换个关键词或查看全部文章。</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-        <nav class="mobile-only app-view-switcher" data-i18n-aria="postNavigation" aria-label="文章导航">
-          {navItems.map((item) => (
-            <a href={item.href} data-desktop-filter={item.kind} aria-current={item.selected ? 'page' : undefined}>
-              <AdwIcon name={item.kind === 'all' ? 'text-x-generic' : item.icon} />
-              <span data-i18n={item.kind === 'all' ? 'allPosts' : item.kind}>{item.label}</span>
-            </a>
-          ))}
-        </nav>
-        <WindowResizeAreas />
-      </section>
+          <nav class="mobile-only app-view-switcher" data-i18n-aria="postNavigation" aria-label="文章导航">
+            {navItems.map((item) => (
+              <a href={item.href} data-desktop-filter={item.kind} aria-current={item.selected ? 'page' : undefined}>
+                <AdwIcon name={item.kind === 'all' ? 'text-x-generic' : item.icon} />
+                <span data-i18n={item.kind === 'all' ? 'allPosts' : item.kind}>{item.label}</span>
+              </a>
+            ))}
+          </nav>
+          <WindowResizeAreas />
+        </section>
 
-      {initialWindow === 'reader' && <ReaderWindow title={title} url={Astro.url.pathname} visible><slot name="article" /></ReaderWindow>}
-      <template data-reader-template><ReaderWindow /></template>
+        {initialWindow === 'reader' && <ReaderWindow title={title} url={Astro.url.pathname} visible><slot name="article" /></ReaderWindow>}
+        <template data-reader-template><ReaderWindow /></template>
 
-      <section class="window window--about" data-window="about" data-visible={initialWindow === 'about' ? '' : undefined} data-active={initialWindow === 'about' ? '' : undefined} inert={initialWindow !== 'about'} aria-label="关于博客">
-        <header class="window-header">
-          <div class="mobile-about-back mobile-only">
-            <a href="/blog/" data-open-library data-app-back class="toolbar-icon" data-i18n-aria="backToPosts" aria-label="返回文章列表"><AdwIcon name="go-previous" /></a>
+        <section class="window window--about" data-window="about" data-visible={initialWindow === 'about' ? '' : undefined} data-active={initialWindow === 'about' ? '' : undefined} inert={initialWindow !== 'about'} aria-label="关于博客">
+          <header class="window-header">
+            <div class="mobile-about-back mobile-only">
+              <a href="/blog/" data-open-library data-app-back class="toolbar-icon" data-i18n-aria="backToPosts" aria-label="返回文章列表"><AdwIcon name="go-previous" /></a>
+            </div>
+            <span class="mobile-about-title mobile-only" data-i18n="aboutShort">关于</span>
+            <button type="button" class="window-drag" data-drag-handle data-i18n-aria="moveWindow" aria-label="移动窗口，使用方向键调整位置" title="移动窗口，使用方向键调整位置"><span class="window-title" data-i18n="aboutShort">关于</span></button>
+            <div class="window-controls"><WindowControls name="about" /></div>
+          </header>
+          <div class="about-content">
+            <img class="about-avatar" src="/profile.png" width="96" height="96" alt="" />
+            <h2>xiaozhangup</h2>
+            <p data-i18n="welcome">欢迎来到我的个人博客。</p>
+            <div class="about-links">
+              <a href="https://github.com/xiaozhangup" target="_blank" rel="noopener noreferrer"><Icon name="simple-icons:github" aria-hidden="true" /><span>GitHub</span><AdwIcon name="go-next" /></a>
+              <a href="/rss.xml"><AdwIcon name="application-rss+xml" /><span data-i18n="rss">RSS 订阅</span><AdwIcon name="go-next" /></a>
+            </div>
           </div>
-          <span class="mobile-about-title mobile-only" data-i18n="aboutShort">关于</span>
-          <button type="button" class="window-drag" data-drag-handle data-i18n-aria="moveWindow" aria-label="移动窗口，使用方向键调整位置" title="移动窗口，使用方向键调整位置"><span class="window-title" data-i18n="aboutShort">关于</span></button>
-          <div class="window-controls"><WindowControls name="about" /></div>
-        </header>
-        <div class="about-content">
-          <img class="about-avatar" src="/profile.png" width="96" height="96" alt="" />
-          <h2>xiaozhangup</h2>
-          <p data-i18n="welcome">欢迎来到我的个人博客。</p>
-          <div class="about-links">
-            <a href="https://github.com/xiaozhangup" target="_blank" rel="noopener noreferrer"><Icon name="simple-icons:github" aria-hidden="true" /><span>GitHub</span><AdwIcon name="go-next" /></a>
-            <a href="/rss.xml"><AdwIcon name="application-rss+xml" /><span data-i18n="rss">RSS 订阅</span><AdwIcon name="go-next" /></a>
-          </div>
-        </div>
-        <WindowResizeAreas />
+          <WindowResizeAreas />
+        </section>
+        <MusicWindow active={initialWindow === 'music'} />
       </section>
-      <MusicWindow active={initialWindow === 'music'} />
+      <section class="desktop-workspace desktop-workspace--empty" id="workspace-two" aria-label="工作区 2" data-i18n-aria="workspaceTwo" inert></section>
       <div class="visually-hidden" aria-live="polite" data-announcer></div>
     </main>
     <script src="../desktop/desktop.ts"></script>

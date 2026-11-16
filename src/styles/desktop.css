@@ -75,7 +75,30 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
 .adw-icon { display: inline-block; width: 16px; height: 16px; flex: none; background: currentColor; mask: var(--adw-icon) center / contain no-repeat; }
 
 
-.desktop { --dock-left: 6px; --dock-width: 64px; position: fixed; inset: 0; overflow: hidden; isolation: isolate; background: url('/wallpapers/desktop-wide.jpg') center / cover no-repeat #172936; }
+.desktop {
+  --dock-left: 6px;
+  --dock-width: 64px;
+  --desktop-wallpaper: url('/wallpapers/desktop-wide.jpg');
+  --workspace-spacing: 100px;
+  position: fixed;
+  inset: 0;
+  overflow: clip;
+  isolation: isolate;
+  background: linear-gradient(rgb(0 0 0 / 34%), rgb(0 0 0 / 34%)),
+    var(--desktop-wallpaper) center / cover no-repeat #172936;
+}
+.desktop-workspace {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  translate: 0;
+  background: var(--desktop-wallpaper) center / cover no-repeat #172936;
+}
+@media (width > 760px) and ((height > 480px) or (pointer: fine) or (pointer: none)) {
+  .desktop-workspace--empty { translate: calc(100% + var(--workspace-spacing)); }
+  .desktop[data-workspace='2'] > .desktop-workspace { translate: calc(-100% - var(--workspace-spacing)); }
+  .desktop[data-workspace='2'] > .desktop-workspace--empty { translate: 0; }
+}
 .dock-anchor { position: fixed; z-index: 10000; top: 50%; left: var(--dock-left); width: var(--dock-width); transform: translateY(-50%); pointer-events: none; }
 .dock { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 5px; width: 100%; border-radius: 18px; background: rgba(18, 18, 20, .9); pointer-events: auto; transition: transform 200ms ease-out, opacity 200ms ease-out; }
 .dock.is-obscured:not(.is-revealed):not(:has(:focus-visible)) { transform: translateX(calc(-100% - 8px)); opacity: 0; pointer-events: none; }
@@ -452,7 +475,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
 .about-links svg { width: 16px; height: 16px; }
 
 @media (aspect-ratio > 21/10) {
-  .desktop { background-image: url('/wallpapers/desktop-ultrawide.jpg'); }
+  .desktop { --desktop-wallpaper: url('/wallpapers/desktop-ultrawide.jpg'); }
 }
 @media (pointer: coarse) {
   :root { --shell-height: 44px; }

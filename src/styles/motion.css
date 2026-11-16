@@ -78,6 +78,14 @@
 .music-progress i { transition: transform 500ms linear; }
 
 @media (prefers-reduced-motion: no-preference) {
+  html:not([data-motion='off']) .desktop-workspace {
+    transition: translate 250ms cubic-bezier(.333, 1, .667, 1);
+  }
+  .workspace-indicator i {
+    transition: width var(--control-duration) var(--motion-ease),
+      height var(--control-duration) var(--motion-ease),
+      background-color var(--control-duration) ease-out;
+  }
   html:not([data-motion='off']) :is(
     .library-search, .folder-grid, .files-view, .post-row, .empty-list,
     .reader-scroll .article-document, [data-article-language], .music-playing, .clock-media-track

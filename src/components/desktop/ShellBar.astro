@@ -12,7 +12,9 @@ const mobileContacts = menus.filter((menu) => menu.mobile !== false).flatMap((me
 ---
 <header class="topbar" data-spotify-endpoint={endpoint}>
   <div class="topbar-start">
-    <span class="workspace-indicator" aria-hidden="true"><i class="workspace-current"></i><i></i></span>
+    <button type="button" class="workspace-indicator" data-switch-workspace data-i18n-aria="workspaceTwo" aria-label="工作区 2" aria-controls="workspace-two" aria-pressed="false">
+      <i aria-hidden="true"></i><i aria-hidden="true"></i>
+    </button>
 
     {menus.map((menu) => {
       const label = labelPair(menu.label);

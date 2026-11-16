@@ -29,10 +29,22 @@
 }
 
 .topbar-end { justify-content: flex-end; }
-.workspace-indicator { display: flex; align-items: center; gap: 5px; height: 22px; padding-inline: 8px; border-radius: 99px; }
-.workspace-indicator:hover { background-color: rgb(255 255 255 / 24%); }
+.workspace-indicator {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 99px;
+  background: transparent;
+  cursor: pointer;
+}
+.workspace-indicator:is(:hover, :focus-visible) { background-color: rgb(255 255 255 / 24%); }
 .workspace-indicator i { width: 5px; height: 5px; border-radius: 50px; background: #94999c; }
-.workspace-indicator .workspace-current { width: 22px; height: 6px; background: #fff; }
+.workspace-indicator[aria-pressed='false'] i:first-child,
+.workspace-indicator[aria-pressed='true'] i:last-child { width: 22px; height: 6px; background: #fff; }
 .shell-menu { min-width: 0; }
 .shell-trigger {
   display: flex;

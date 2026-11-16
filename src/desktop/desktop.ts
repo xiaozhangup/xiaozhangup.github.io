@@ -10,6 +10,9 @@ type FilterKind = 'all' | 'categories' | 'tags' | 'archives' | 'search' | 'categ
 type WindowKind = 'library' | 'reader' | 'about' | 'music';
 
 const root = document.querySelector<HTMLElement>('.desktop')!;
+const firstWorkspace = root.querySelector<HTMLElement>('#workspace-one')!;
+const secondWorkspace = root.querySelector<HTMLElement>('#workspace-two')!;
+const workspaceButton = document.querySelector<HTMLButtonElement>('[data-switch-workspace]')!;
 const library = root.querySelector<HTMLElement>('[data-window="library"]')!;
 const about = root.querySelector<HTMLElement>('[data-window="about"]')!;
 const music = root.querySelector<HTMLElement>('[data-window="music"]')!;
@@ -46,6 +49,7 @@ let searchVersion = 0;
 let searchTimer: ReturnType<typeof setTimeout> | undefined;
 let pagefind: Promise<any> | undefined;
 let topZ = 30;
+let workspace: 1 | 2 = 1;
 const initialKind = document.body.dataset.initialWindow as WindowKind;
 let activeWindow: HTMLElement | null = null;
 let libraryRunning = true;
@@ -110,7 +114,7 @@ function updateDockItem(win: HTMLElement, item: HTMLAnchorElement) {
   item.href = windowRoute(win);
   item.dataset.tooltip = title;
   item.setAttribute('aria-label', title);
-  item.classList.toggle('is-active', win === activeWindow && isVisible(win));
+  item.classList.toggle('is-active', workspace === 1 && win === activeWindow && isVisible(win));
   item.querySelector<HTMLElement>('.dock-dot')!.hidden = win === library && !libraryRunning;
 }
 function dockItemFor(win: HTMLElement, rendered?: HTMLAnchorElement) {
@@ -130,6 +134,26 @@ function dockItemFor(win: HTMLElement, rendered?: HTMLAnchorElement) {
 }
 function syncDockApps() {
   for (const [win, item] of dockItems) updateDockItem(win, item);
+}
+function switchWorkspace(next: 1 | 2) {
+  if (workspace === next) return false;
+
+  articleRequest++;
+  dismissDisclosure(true);
+  const onFirst = next === 1;
+  if (!onFirst && firstWorkspace.contains(document.activeElement)) {
+    workspaceButton.focus({ preventScroll: true });
+  }
+  workspace = next;
+  root.dataset.workspace = String(next);
+  workspaceButton.setAttribute('aria-pressed', String(!onFirst));
+  firstWorkspace.inert = !onFirst;
+  secondWorkspace.inert = onFirst;
+  activeTitle.textContent = onFirst && activeWindow && isVisible(activeWindow) ? windowTitle(activeWindow) : t('desktop');
+  syncDockApps();
+  scheduleDockOverlap();
+  announce(t(onFirst ? 'workspaceOne' : 'workspaceTwo'));
+  return true;
 }
 function syncWindowAccess() {
   for (const win of dockItems.keys()) {
@@ -169,7 +193,8 @@ function setSearchVisible(open: boolean) {
 }
 function showSearch() {
   articleRequest++;
-  focusWindow(library, true);
+  const switched = switchWorkspace(1);
+  focusWindow(library, !switched);
   library.classList.remove('sidebar-open');
   syncSidebar();
   setSearchVisible(true);
@@ -187,6 +212,7 @@ function hideSearch() {
 }
 function setFilter(kind: FilterKind, value = '', updateUrl = false, url = '/blog/') {
   articleRequest++;
+  const switched = switchWorkspace(1);
   currentFilter = kind;
   currentValue = value;
   if (updateUrl) {
@@ -207,7 +233,7 @@ function setFilter(kind: FilterKind, value = '', updateUrl = false, url = '/blog
     if (selected) link.setAttribute('aria-current', 'page'); else link.removeAttribute('aria-current');
   });
   filterPosts();
-  focusWindow(library, updateUrl);
+  focusWindow(library, updateUrl && !switched);
   if (updateUrl && kind !== 'search') heading.focus();
 }
 function filterPosts() {
@@ -276,7 +302,7 @@ async function loadReader(path: string) {
   reader.querySelector('[data-disclosure-trigger]')!.setAttribute('aria-controls', menuId);
   reader.querySelector('.window-menu-popover')!.id = menuId;
   reader.querySelector('[data-reader-content]')!.append(article);
-  root.append(reader);
+  firstWorkspace.append(reader);
   if (!mobileLayout.matches && readers.size) {
     const offset = readers.size % 5 * 24;
     reader.style.left = `${reader.offsetLeft + offset}px`;
@@ -419,7 +445,8 @@ function requestWindowFocus(win: HTMLElement) {
 }
 function activateWindow(win: HTMLElement) {
   articleRequest++;
-  focusWindow(win, true);
+  const switched = switchWorkspace(1);
+  focusWindow(win, !switched);
   pushUrl(windowRoute(win));
   document.title = blogTitle(windowTitle(win));
   requestWindowFocus(win);
@@ -478,7 +505,7 @@ root.addEventListener('click', (event) => {
   if (anchor.hasAttribute('data-dock-window')) {
     event.preventDefault();
     const [win] = [...dockItems].find(([, item]) => item === anchor)!;
-    if (win === activeWindow && isVisible(win)) minimizeWindow(win);
+    if (workspace === 1 && win === activeWindow && isVisible(win)) minimizeWindow(win);
     else activateWindow(win);
     return;
   }
@@ -515,6 +542,14 @@ new ResizeObserver(updateSidebarMode).observe(library);
 updateSidebarMode();
 initDesktopShortcuts(root.querySelector<HTMLElement>('.desktop-icons')!, (label, action) => announce(`${label} ${t(action)}`));
 initDisclosures();
+workspaceButton.addEventListener('click', () => switchWorkspace(workspace === 1 ? 2 : 1));
+workspaceButton.addEventListener('wheel', (event) => {
+  if (event.ctrlKey) return;
+  const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+  if (!delta) return;
+  event.preventDefault();
+  switchWorkspace(delta < 0 ? 1 : 2);
+}, { passive: false });
 searchInput.addEventListener('input', filterPosts);
 searchForm.addEventListener('submit', (event) => {
   event.preventDefault();
@@ -537,9 +572,10 @@ document.addEventListener('keydown', (event) => {
     event.preventDefault();
     showSearch();
   }
-  if (event.key === 'Escape' && !mobileLayout.matches && activeWindow && activeWindow !== library && isVisible(activeWindow)) closeWindow(activeWindow);
+  if (event.key === 'Escape' && !mobileLayout.matches && workspace === 1 && activeWindow && activeWindow !== library && isVisible(activeWindow)) closeWindow(activeWindow);
 });
 window.addEventListener('popstate', () => {
+  switchWorkspace(1);
   const filter = pathFilter();
   const path = location.pathname.replace(/\/+$/, '');
   articleRequest++;
@@ -566,7 +602,7 @@ function isDockTarget(target: EventTarget | null) {
 function updateDockOverlap() {
   dock.classList.toggle('is-scrollable', dock.scrollHeight > dock.clientHeight);
   const bounds = dockAnchor.getBoundingClientRect();
-  const obscured = dockItems.size > 0 && [...dockItems.keys()].some((win) => {
+  const obscured = workspace === 1 && [...dockItems.keys()].some((win) => {
     if (!isVisible(win)) return false;
     const rect = windowBox(win);
     return rect.left < bounds.right && rect.right > bounds.left && rect.top < bounds.bottom && rect.bottom > bounds.top;
@@ -600,6 +636,7 @@ scheduleDockOverlap();
 
 mobileLayout.addEventListener('change', () => {
   dismissDisclosure();
+  if (mobileLayout.matches) switchWorkspace(1);
   syncSidebar();
   if (mobileLayout.matches && (!activeWindow || !isVisible(activeWindow))) {
     const next = [...dockItems.keys()].filter(isVisible).sort((a, b) => Number(b.style.zIndex) - Number(a.style.zIndex))[0] ?? library;
@@ -677,7 +714,7 @@ function applyLanguage(next: Language) {
   spotify.updateLanguage();
   listeningWindow.updateLabels();
   if (activeWindow && isVisible(activeWindow)) {
-    activeTitle.textContent = windowTitle(activeWindow);
+    activeTitle.textContent = workspace === 1 ? windowTitle(activeWindow) : t('desktop');
     document.title = blogTitle(windowTitle(activeWindow));
   } else activeTitle.textContent = t('desktop');
 }
@@ -713,7 +750,7 @@ document.querySelectorAll<HTMLButtonElement>('[data-quick-action]').forEach((but
   const action = button.dataset.quickAction;
   if (action === 'library') setFilter('all', '', true, '/blog/');
   else if (action === 'about') activateWindow(about);
-  else {
+  else if (workspace === 1) {
     articleRequest++;
     for (const [win, item] of dockItems) {
       if (isVisible(win)) flyToWindow(win, item, false, () => hideWindow(win));

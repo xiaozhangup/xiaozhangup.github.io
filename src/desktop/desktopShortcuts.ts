@@ -16,7 +16,8 @@ export function initDesktopShortcuts(grid: HTMLElement, announce: (label: string
   ghost.alt = '';
   drop.className = 'desktop-drop-target';
   ghost.hidden = drop.hidden = true;
-  grid.after(drop, ghost);
+  grid.after(drop);
+  desktop.after(ghost);
 
   function layout() {
     const css = getComputedStyle(grid);
