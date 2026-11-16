@@ -1,4 +1,5 @@
-# 桌面外链从左下角按顺序向上排列。icon 使用 public/ 中的文件路径。
+# 桌面外链从左下角按顺序向上排列。一列排满后，从右边一列的底部接着排。
+# icon 使用 public/ 中的文件路径。
 # label 可用一段文字，也可写成 { zh: 中文, en: English }。
 # newTab 默认开启。设为 false 时在当前标签页打开。
 shortcuts:
@@ -14,3 +15,9 @@ shortcuts:
   - label: Spotify
     icon: /adwaita/color/spotify-client.png
     href: https://open.spotify.com/user/31zejmn3iup6yuyfl3gifuclq2ha?si=d06fff3b8c3b49af
+  - label: { zh: 哔哩哔哩, en: Bilibili }
+    icon: /adwaita/color/bilibili.png
+    href: https://space.bilibili.com/362128340
+  - label: GitHub
+    icon: /adwaita/color/github.png
+    href: https://github.com/xiaozhangup
