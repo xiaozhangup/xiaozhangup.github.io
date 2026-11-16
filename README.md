@@ -58,7 +58,7 @@ draft: false
 
 ## 桌面外链和顶栏菜单
 
-- `desktop-shortcuts.yaml` 按顺序放置回收站下方的快捷方式。每项可设置名称、目标地址、图标和是否在新标签页打开。
+- `desktop-shortcuts.yaml` 的快捷方式从桌面左下角按顺序向上排列。每项可设置名称、目标地址、图标和是否在新标签页打开。
 - `topbar-contacts.yaml` 的每个 `menus` 项对应顶栏左侧一个按钮。菜单的 `items` 可组合普通链接、`mailto:` 链接和复制动作，并设置图标、双语名称和复制提示。当前 GitHub、邮箱菜单可直接作为示例。设置 `mobile: false` 可让指定菜单仅在桌面出现。
 
 编辑这两份配置并推送到 `main` 后，GitHub Actions 会自动部署。

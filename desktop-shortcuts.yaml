@@ -1,16 +1,16 @@
-# 桌面外链从回收站下方按顺序排列。icon 使用 public/ 中的文件路径。
+# 桌面外链从左下角按顺序向上排列。icon 使用 public/ 中的文件路径。
 # label 可用一段文字，也可写成 { zh: 中文, en: English }。
 # newTab 默认开启。设为 false 时在当前标签页打开。
 shortcuts:
   - label: 爱发电
     icon: /adwaita/color/afdian.svg
     href: https://afdian.net/a/xiaozhangup
-  - label: Steam
-    icon: /adwaita/color/steam.svg
-    href: https://steamcommunity.com/profiles/76561199210251377/
   - label: Last.fm
     icon: /adwaita/color/lastfm.svg
     href: https://www.last.fm/user/xiaozhangup
+  - label: Steam
+    icon: /adwaita/color/steam.png
+    href: https://steamcommunity.com/profiles/76561199210251377/
   - label: Spotify
-    icon: /adwaita/color/spotify.svg
+    icon: /adwaita/color/spotify-client.png
     href: https://open.spotify.com/user/31zejmn3iup6yuyfl3gifuclq2ha?si=d06fff3b8c3b49af

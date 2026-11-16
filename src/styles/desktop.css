@@ -127,6 +127,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
   --shortcut-right: 24px;
   --shortcut-left: calc(var(--dock-left) + var(--dock-width) + var(--shortcut-gap));
   --shortcut-top: 50px;
+  --shortcut-bottom: 24px;
   position: absolute;
   inset: 0;
   padding-left: var(--shortcut-left);
@@ -156,8 +157,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
   touch-action: none;
   cursor: grab;
 }
-.desktop-shortcut:nth-of-type(2) { --shortcut-row: 1; }
-.desktop-shortcut:nth-of-type(3) { --shortcut-row: 2; }
 .desktop-shortcut:hover { background: #ffffff18; }
 .desktop-shortcut.is-dragging { background: #ffffff24; opacity: .55; cursor: grabbing; }
 .desktop-trash { left: var(--shortcut-x, var(--shortcut-left)); right: auto; transition: background-color 150ms ease; }

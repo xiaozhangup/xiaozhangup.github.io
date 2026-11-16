@@ -7,6 +7,7 @@ const directions: Record<string, [number, number]> = {
 
 export function initDesktopShortcuts(grid: HTMLElement, announce: (label: string, action: 'shortcutMoved' | 'shortcutTrashed') => void) {
   const desktop = grid.parentElement!;
+  const tiles = [...grid.querySelectorAll<HTMLElement>('.desktop-shortcut')];
   const shortcuts = [...grid.querySelectorAll<HTMLAnchorElement>('a.desktop-shortcut')];
   const trash = grid.querySelector<HTMLElement>('[data-desktop-trash]')!;
   const trashIcon = trash.querySelector('img')!;
@@ -29,20 +30,12 @@ export function initDesktopShortcuts(grid: HTMLElement, announce: (label: string
     const step = { x: width + gap, y: height + gap };
     const lastColumn = Math.max(0, Math.floor((desktop.clientWidth - left - width - read('--shortcut-right')) / step.x));
     const origin = { x: left + lastColumn * step.x, y: read('--shortcut-top') };
-    return { origin, step, lastColumn, lastRow: Math.max(0, Math.floor((desktop.clientHeight - origin.y - height) / step.y)) };
+    const lastRow = Math.max(0, Math.floor((desktop.clientHeight - origin.y - height - read('--shortcut-bottom')) / step.y));
+    return { origin, step, lastColumn, lastRow };
   }
   let frame = layout();
-  const cells = new Map<HTMLElement, Cell>([[trash, { column: frame.lastColumn, row: 0 }]]);
-  let leftIndex = 1;
-  let rightIndex = 0;
-  const rows = frame.lastRow + 1;
-  for (const tile of shortcuts) {
-    const onLeft = tile.dataset.shortcutSide === 'left';
-    const index = onLeft ? leftIndex++ : rightIndex++;
-    const column = Math.floor(index / rows);
-    cells.set(tile, bounded({ column: onLeft ? frame.lastColumn - column : column, row: index % rows }));
-  }
-  for (const [tile, cell] of cells) place(tile, cell);
+  const cells = new Map<HTMLElement, Cell>();
+  const moved = new Set<HTMLElement>();
 
   function cellLeft(column: number) {
     return frame.origin.x - column * frame.step.x;
@@ -62,11 +55,13 @@ export function initDesktopShortcuts(grid: HTMLElement, announce: (label: string
   }
   function commit(tile: HTMLElement, cell: Cell) {
     if (occupied(tile, cell) || sameCell(cells.get(tile)!, cell)) return;
+    moved.add(tile);
     place(tile, cell);
     announce(tile.textContent!.trim(), 'shortcutMoved');
   }
   function discard(tile: HTMLElement) {
     cells.delete(tile);
+    moved.delete(tile);
     tile.hidden = true;
     trashIcon.src = '/adwaita/color/user-trash-full.svg';
     announce(tile.textContent!.trim(), 'shortcutTrashed');
@@ -74,27 +69,38 @@ export function initDesktopShortcuts(grid: HTMLElement, announce: (label: string
   const overTrash = ({ clientX, clientY }: PointerEvent) =>
     trash.contains(document.elementFromPoint(clientX, clientY));
 
-  window.addEventListener('resize', () => {
-    if (!grid.clientWidth) return;
+  function arrange() {
     const previous = frame;
     frame = layout();
-    for (const [tile, old] of cells) {
-      const column = old.column === previous.lastColumn ? frame.lastColumn : old.column;
-      const next = bounded({ column, row: old.row });
-      if (!occupied(tile, next)) {
-        place(tile, next);
-        continue;
-      }
-      if (sameCell(old, next)) continue;
-      const candidates = Array.from({ length: (frame.lastColumn + 1) * (frame.lastRow + 1) }, (_, index) => ({
-        column: Math.floor(index / (frame.lastRow + 1)), row: index % (frame.lastRow + 1),
-      }));
-      const free = candidates.find((candidate) => !occupied(tile, candidate));
-      if (free) place(tile, free);
+    const oldCells = new Map(cells);
+    cells.clear();
+    const rows = frame.lastRow + 1;
+    const bottomUp = Array.from({ length: (frame.lastColumn + 1) * rows }, (_, index) => ({
+      column: frame.lastColumn - Math.floor(index / rows), row: frame.lastRow - index % rows,
+    }));
+    function placeAvailable(tile: HTMLElement, preferred: Cell) {
+      const cell = bounded(preferred);
+      place(tile, occupied(tile, cell) ? bottomUp.find((candidate) => !occupied(tile, candidate)) ?? cell : cell);
     }
-  });
+    for (const tile of moved) {
+      const old = oldCells.get(tile)!;
+      placeAvailable(tile, { column: old.column === previous.lastColumn ? frame.lastColumn : old.column, row: old.row });
+    }
+    let left = frame.lastColumn;
+    let rightRow = 0;
+    for (const tile of tiles) {
+      if (tile.hidden) continue;
+      const home = tile === trash ? { column: frame.lastColumn, row: 1 }
+        : tile.dataset.shortcutHome === 'top-right' ? { column: 0, row: rightRow++ }
+        : tile.dataset.shortcutHome === 'bottom-left' ? { column: frame.lastColumn, row: frame.lastRow }
+        : { column: left--, row: 0 };
+      if (!moved.has(tile)) placeAvailable(tile, home);
+    }
+  }
+  arrange();
+  window.addEventListener('resize', () => { if (grid.clientWidth) arrange(); });
 
-  for (const tile of cells.keys()) {
+  for (const tile of tiles) {
     const canDiscard = tile !== trash;
     let drag: { startX: number; startY: number; offsetX: number; offsetY: number; iconX: number; iconY: number; cell: Cell } | null = null;
     let movedByPointer = false;
