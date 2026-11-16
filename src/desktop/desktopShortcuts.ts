@@ -75,12 +75,17 @@ export function initDesktopShortcuts(grid: HTMLElement, announce: (label: string
     const oldCells = new Map(cells);
     cells.clear();
     const rows = frame.lastRow + 1;
+    const trashHome = { column: frame.lastColumn, row: 1 };
+    const gapBelowTrash = { column: trashHome.column, row: trashHome.row + 1 };
     const bottomUp = Array.from({ length: (frame.lastColumn + 1) * rows }, (_, index) => ({
       column: frame.lastColumn - Math.floor(index / rows), row: frame.lastRow - index % rows,
     }));
     function placeAvailable(tile: HTMLElement, preferred: Cell) {
       const cell = bounded(preferred);
-      place(tile, occupied(tile, cell) ? bottomUp.find((candidate) => !occupied(tile, candidate)) ?? cell : cell);
+      const reserveGap = tile.dataset.shortcutHome === 'bottom-left' && !moved.has(tile);
+      const available = (candidate: Cell) =>
+        !occupied(tile, candidate) && !(reserveGap && sameCell(candidate, gapBelowTrash));
+      place(tile, available(cell) ? cell : bottomUp.find(available) ?? cell);
     }
     for (const tile of moved) {
       const old = oldCells.get(tile)!;
@@ -90,7 +95,7 @@ export function initDesktopShortcuts(grid: HTMLElement, announce: (label: string
     let rightRow = 0;
     for (const tile of tiles) {
       if (tile.hidden) continue;
-      const home = tile === trash ? { column: frame.lastColumn, row: 1 }
+      const home = tile === trash ? trashHome
         : tile.dataset.shortcutHome === 'top-right' ? { column: 0, row: rightRow++ }
         : tile.dataset.shortcutHome === 'bottom-left' ? { column: frame.lastColumn, row: frame.lastRow }
         : { column: left--, row: 0 };
