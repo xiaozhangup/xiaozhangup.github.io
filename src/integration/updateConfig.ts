@@ -2,9 +2,8 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import type { AstroIntegration } from "astro";
 
-import { SITE_THEME } from "../config";
+import { SITE_CONFIG_FILE, SITE_THEME } from "../config";
 
-const CONFIG_FILE = path.resolve("frosti.config.yaml");
 const TRANSLATIONS_FILE = path.resolve("src/i18n/translations.yaml");
 const DAISY_THEMES_FILE = path.resolve("src/styles/daisyui-themes.css");
 
@@ -19,8 +18,8 @@ const renderDaisyThemes = (): string => {
   );
 
   return [
-    "/* Auto-generated from frosti.config.yaml by src/integration/updateConfig.ts. */",
-    "/* Do not edit; change `site.theme` in frosti.config.yaml instead. */",
+    "/* Auto-generated from configs/frosti.config.yaml by src/integration/updateConfig.ts. */",
+    "/* Edit `site.theme` in configs/frosti.config.yaml to update these themes. */",
     '@plugin "daisyui" {',
     `  themes: ${themeEntries.join(", ")};`,
     "  logs: false;",
@@ -33,7 +32,7 @@ const updateConfigIntegration = (): AstroIntegration => ({
   name: "update-config",
   hooks: {
     "astro:config:setup": ({ addWatchFile }) => {
-      addWatchFile(CONFIG_FILE);
+      addWatchFile(SITE_CONFIG_FILE);
       addWatchFile(TRANSLATIONS_FILE);
 
       const content = renderDaisyThemes();

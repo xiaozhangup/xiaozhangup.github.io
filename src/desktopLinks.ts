@@ -1,6 +1,6 @@
 import yaml from 'js-yaml';
-import desktopYaml from '../desktop-shortcuts.yaml?raw';
-import contactsYaml from '../topbar-contacts.yaml?raw';
+import desktopYaml from '../configs/desktop-shortcuts.yaml?raw';
+import contactsYaml from '../configs/topbar-contacts.yaml?raw';
 
 export type LocalizedLabel = string | { zh: string; en: string };
 type Labelled = { label: LocalizedLabel; icon?: string };

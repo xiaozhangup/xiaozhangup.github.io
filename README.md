@@ -45,7 +45,7 @@ draft: false
 推送到 `main` 自动触发 `.github/workflows/deploy.yml`，安装依赖、检查、构建并部署 GitHub Pages。
 也可在 Actions 页面手动运行。Pages Source 使用 GitHub Actions，域名和强制 HTTPS 保持启用。
 
-- `frosti.config.yaml`：名称、简介、主题颜色、导航、社交链接和每页文章数。
+- `configs/frosti.config.yaml`：名称、简介、主题颜色、导航、社交链接和每页文章数。
 - `src/layouts/DesktopShell.astro`：桌面、Dock 和窗口结构。
 - `src/styles/desktop.css`：桌面样式。
 - `src/desktop/desktop.ts`：窗口操作、导航、搜索和 Spotify 状态。
@@ -58,8 +58,8 @@ draft: false
 
 ## 桌面外链和顶栏菜单
 
-- `desktop-shortcuts.yaml` 的快捷方式从桌面左下角按顺序向上排列。每项可设置名称、目标地址、图标和是否在新标签页打开。
-- `topbar-contacts.yaml` 的每个 `menus` 项对应顶栏左侧一个按钮。菜单的 `items` 可组合普通链接、`mailto:` 链接和复制动作，并设置图标、双语名称和复制提示。当前 GitHub、邮箱菜单可直接作为示例。设置 `mobile: false` 可让指定菜单仅在桌面出现。
+- `configs/desktop-shortcuts.yaml` 的快捷方式从桌面左下角按顺序向上排列。每项可设置名称、目标地址、图标和是否在新标签页打开。
+- `configs/topbar-contacts.yaml` 的每个 `menus` 项对应顶栏左侧一个按钮。菜单的 `items` 可组合普通链接、`mailto:` 链接和复制动作，并设置图标、双语名称和复制提示。当前 GitHub、邮箱菜单可直接作为示例。设置 `mobile: false` 可让指定菜单仅在桌面出现。
 
 编辑这两份配置并推送到 `main` 后，GitHub Actions 会自动部署。
 

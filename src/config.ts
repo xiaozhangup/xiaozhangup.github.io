@@ -4,11 +4,11 @@ import type { Config } from "@interfaces/site";
 import yaml from "js-yaml";
 
 // 配置文件路径
-const configPath = path.resolve("frosti.config.yaml");
+export const SITE_CONFIG_FILE = path.resolve("configs/frosti.config.yaml");
 // 翻译文件路径
 const translationsPath = path.resolve("src/i18n/translations.yaml");
 // 读取并解析 YAML 文件
-const config = yaml.load(fs.readFileSync(configPath, "utf8")) as Config;
+const config = yaml.load(fs.readFileSync(SITE_CONFIG_FILE, "utf8")) as Config;
 // 读取并解析翻译文件
 const translationsConfig = yaml.load(
   fs.readFileSync(translationsPath, "utf8"),
