@@ -126,7 +126,11 @@ function dockItemFor(win: HTMLElement, rendered?: HTMLAnchorElement) {
     const icons = { library: 'gnome-files', reader: 'text-x-generic', about: 'help-about', music: 'gnome-music' };
     item.dataset.dockWindow = kind;
     item.querySelector('img')!.src = `/adwaita/color/${icons[kind]}.svg`;
+    item.setAttribute('data-dock-entering', '');
     dock.append(item);
+    // Resolve the starting style on insertion.
+    item.getAnimations();
+    item.removeAttribute('data-dock-entering');
   }
   dockItems.set(win, item);
   updateDockItem(win, item);
@@ -370,8 +374,12 @@ function closeWindow(win: HTMLElement) {
   const wasActive = activeWindow === win;
   if (win === library) libraryRunning = false;
   else {
-    dockItems.get(win)!.remove();
+    const item = dockItems.get(win)!;
     dockItems.delete(win);
+    item.inert = true;
+    item.setAttribute('data-dock-closing', '');
+    const transitions = item.getAnimations();
+    void Promise.allSettled(transitions.map((transition) => transition.finished)).then(() => item.remove());
   }
   if (windowKind(win) === 'reader') {
     readers.delete(win.dataset.articleUrl!);

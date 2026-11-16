@@ -103,7 +103,7 @@ export function animateDockFlight(win: HTMLElement, icon: HTMLElement, showing: 
   const dockOffset = dock ? dock.parentElement!.getBoundingClientRect().left - dock.getBoundingClientRect().left : 0;
   const centerX = (left + right) / 2;
   const centerY = (top + bottom) / 2;
-  const scale = Math.min(iconRect.width / (right - left), iconRect.height / (bottom - top));
+  const scale = Math.min(icon.offsetWidth / (right - left), icon.offsetHeight / (bottom - top));
   const transform = (x: number, y: number, size: number) => `translate(${x - centerX}px, ${y - centerY}px) scale(${size})`;
   const dockFrame = { opacity: 0, transform: transform(iconRect.x + iconRect.width / 2 + dockOffset, iconRect.y + iconRect.height / 2, scale) };
   const windowFrame = { opacity: 1, transform: 'none' };
