@@ -1,0 +1,31 @@
+---
+import { labelPair, type FriendLink } from '@/desktopLinks';
+import AdwIcon from './AdwIcon.astro';
+
+interface Props {
+  id: string;
+  item: FriendLink;
+}
+const { id, item } = Astro.props;
+const label = labelPair(item.label);
+const host = new URL(item.href).hostname;
+---
+<section id={id} class:list={['window', 'window--friend', { 'is-maximized': item.embed }]} data-active aria-labelledby={`${id}-title`} hidden>
+  <header class="window-header">
+    <span id={`${id}-title`} class="friend-window-title" data-label-zh={label.zh} data-label-en={label.en}>{label.zh}</span>
+    <div class="window-controls">
+      <a href={item.href} target="_blank" rel="noopener noreferrer" class="toolbar-icon" data-friend-external data-i18n-aria="openInNewTab" aria-label="在新标签页打开" title="在新标签页打开"><AdwIcon name="external-link" /></a>
+      <button type="button" class="window-control" data-friend-close data-i18n-aria="close" aria-label="关闭" title="关闭"><AdwIcon name="window-close" /></button>
+    </div>
+  </header>
+  {item.embed ? (
+    <iframe class="friend-window-frame" title={label.zh} sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+  ) : (
+    <div class="friend-window-summary">
+      <img src={item.icon} width="72" height="72" alt="" />
+      <span>{host}</span>
+      <p data-i18n="friendPreviewUnavailable">此站点需在新标签页中查看。</p>
+      <a href={item.href} target="_blank" rel="noopener noreferrer" data-i18n="openInNewTab">在新标签页打开</a>
+    </div>
+  )}
+</section>

@@ -13,10 +13,12 @@ export type ContactAction = Labelled & (
 type ContactMenu = Labelled & { id: string; items: ContactAction[]; mobile?: boolean };
 type Shortcut = Labelled & { href: string; icon: string; newTab?: boolean };
 
+export type FriendLink = Omit<Shortcut, 'newTab'> & { embed?: boolean };
+
 export function labelPair(label: LocalizedLabel) {
   return typeof label === 'string' ? { zh: label, en: label } : label;
 }
 
 export const { shortcuts } = yaml.load(desktopYaml) as { shortcuts: Shortcut[] };
-export const { shortcuts: friendLinks } = yaml.load(friendLinksYaml) as { shortcuts: Shortcut[] };
+export const { shortcuts: friendLinks } = yaml.load(friendLinksYaml) as { shortcuts: FriendLink[] };
 export const { menus } = yaml.load(contactsYaml) as { menus: ContactMenu[] };

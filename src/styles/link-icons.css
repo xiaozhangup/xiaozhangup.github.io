@@ -1,0 +1,9 @@
+.smart-link-icon {
+  display: inline-block;
+  width: .875em;
+  height: .875em;
+  margin-inline-start: .25em;
+  vertical-align: -.15em;
+  background-color: currentColor;
+  mask: url('/adwaita/symbolic/external-link-symbolic.svg') center / contain no-repeat;
+}

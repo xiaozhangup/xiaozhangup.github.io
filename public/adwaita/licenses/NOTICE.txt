@@ -6,3 +6,6 @@ color/gnome-files.svg is the GNOME Files icon by the GNOME Design Team, distribu
 
 color/gnome-music.svg is the original GNOME Music app icon by the GNOME Music contributors. See GNOME-Music-license.txt.
 Source: https://gitlab.gnome.org/GNOME/gnome-music/-/blob/master/data/icons/hicolor/scalable/apps/org.gnome.Music.svg
+
+symbolic/external-link-symbolic.svg is the Libadwaita external-link icon by Jakub Steiner, released under CC0 1.0 as stated in its embedded metadata.
+Source: https://gitlab.gnome.org/GNOME/libadwaita

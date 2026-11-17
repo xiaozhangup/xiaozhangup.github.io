@@ -532,8 +532,30 @@ function prepareWindow(win: HTMLElement) {
   bindWindowGeometry(win, () => toggleMaximize(win), (resized) => announce(t(resized ? 'windowResized' : 'windowMoved')));
 }
 
+const friendIcons = secondWorkspace.querySelector<HTMLElement>('.desktop-icons')!;
+let openedFriend: { panel: HTMLElement; shortcut: HTMLAnchorElement } | undefined;
+
+function closeFriend() {
+  if (!openedFriend) return;
+  const { panel, shortcut } = openedFriend;
+  panel.hidden = true;
+  panel.removeAttribute('data-visible');
+  panel.querySelector('iframe')?.removeAttribute('src');
+  friendIcons.inert = false;
+  openedFriend = undefined;
+  shortcut.focus({ preventScroll: true });
+}
+
+secondWorkspace.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && openedFriend) {
+    event.preventDefault();
+    closeFriend();
+  }
+});
+
 root.addEventListener('click', (event) => {
   const target = event.target as HTMLElement;
+  if (target.closest('[data-friend-close]')) { closeFriend(); return; }
   const close = target.closest<HTMLAnchorElement>('[data-close-window]');
   if (close) { event.preventDefault(); closeWindow(close.closest<HTMLElement>('[data-window]')!); return; }
   const toggleSidebar = target.closest<HTMLButtonElement>('[data-toggle-sidebar]');
@@ -583,6 +605,18 @@ root.addEventListener('click', (event) => {
   }
   const anchor = target.closest<HTMLAnchorElement>('a[href]');
   if (!anchor || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || anchor.target === '_blank' || anchor.hasAttribute('download')) return;
+  if (anchor.hasAttribute('data-open-friend')) {
+    event.preventDefault();
+    const panel = document.getElementById(anchor.getAttribute('aria-controls')!)!;
+    const frame = panel.querySelector('iframe');
+    if (frame) frame.src = anchor.href;
+    friendIcons.inert = true;
+    panel.hidden = false;
+    panel.setAttribute('data-visible', '');
+    openedFriend = { panel, shortcut: anchor };
+    panel.querySelector<HTMLElement>('[data-friend-external]')!.focus({ preventScroll: true });
+    return;
+  }
   if (anchor.hasAttribute('data-dock-window')) {
     event.preventDefault();
     const [win] = [...dockItems].find(([, item]) => item === anchor)!;

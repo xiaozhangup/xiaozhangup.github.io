@@ -1,5 +1,6 @@
 # 友链从第二工作区的最右列顶部向下排。一列排满后，接着排左边一列。
-# icon 使用 public/ 中的文件路径。newTab 默认开启。
+# icon 使用 public/ 中的文件路径。默认显示带外链的站点小窗。
+# 对允许跨站嵌入的站点设置 embed: true，以最大化窗口显示网页。
 shortcuts:
   - label: R3ject
     icon: /friend-links/r3ject.png

@@ -1,4 +1,3 @@
-import lucideIcons from "@iconify-json/lucide/icons.json";
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
 import { unified as createMarkdownProcessor } from "@astrojs/markdown-remark";
@@ -9,9 +8,7 @@ import icon from "astro-icon";
 import { smartLinks } from "astro-smart-links";
 import { defineConfig } from "astro/config";
 import rehypeKatex from "rehype-katex";
-import rehypeParse from "rehype-parse";
 import remarkMath from "remark-math";
-import { unified } from "unified";
 
 import { CODE_THEME, USER_SITE } from "./src/config.ts";
 
@@ -19,27 +16,11 @@ import updateConfig from "./src/integration/updateConfig.ts";
 
 import { remarkReadingTime } from "./src/plugins/remark-reading-time";
 
-// External link icon built from the same Iconify set astro-icon uses.
-const iconParser = unified().use(rehypeParse, { fragment: true });
-const externalLinkIconBody = iconParser.parse(lucideIcons.icons["external-link"].body).children;
-
 const createExternalLinkIcon = () => ({
   type: "element",
-  tagName: "svg",
-  properties: {
-    xmlns: "http://www.w3.org/2000/svg",
-    width: "1em",
-    height: "1em",
-    viewBox: `0 0 ${lucideIcons.width} ${lucideIcons.height}`,
-    fill: "none",
-    stroke: "currentColor",
-    "stroke-width": "2",
-    "stroke-linecap": "round",
-    "stroke-linejoin": "round",
-    className: ["smart-link-icon"],
-    "aria-hidden": "true",
-  },
-  children: structuredClone(externalLinkIconBody),
+  tagName: "span",
+  properties: { className: ["smart-link-icon"], "aria-hidden": "true" },
+  children: [],
 });
 
 // https://astro.build/config

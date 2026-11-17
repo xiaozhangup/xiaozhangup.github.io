@@ -16,7 +16,7 @@ const { title = '文章', url, visible = false } = Astro.props;
     <button type="button" class="window-drag" data-drag-handle data-i18n-aria="moveWindow" aria-label="移动窗口，使用方向键调整位置" title="移动窗口，使用方向键调整位置"><span class="window-title" data-reader-title>{title}</span></button>
     <span class="mobile-reader-title mobile-only" data-reader-title>{title}</span>
     <div class="window-controls">
-      <button type="button" class="toolbar-icon" data-copy-link data-i18n-aria="copyLink" aria-label="复制文章链接" title="复制文章链接"><AdwIcon name="insert-link" /></button>
+      <button type="button" class="toolbar-icon" data-copy-link data-i18n-aria="copyLink" aria-label="复制文章链接" title="复制文章链接"><AdwIcon name="external-link" /></button>
       <WindowControls name="reader" />
     </div>
   </header>

@@ -14,7 +14,7 @@ const coverSize = compact ? 40 : 84;
       <span class="music-listening-label">
         <span data-i18n="listeningNow">我正在听</span><span class="music-listening-baseline" aria-hidden="true"></span>
       </span>
-      <AdwIcon name="go-next" class="music-listening-chevron" />
+      <AdwIcon name="external-link" class="music-listening-chevron" />
     </header>
   )}
   <div class="music-main">
@@ -32,7 +32,7 @@ const coverSize = compact ? 40 : 84;
       <span class="music-time" data-spotify-duration>0:00</span>
     </div>
     {!compact && (
-      <a class="spotify-open" data-spotify-link target="_blank" rel="noopener noreferrer" title="在 Spotify 打开" aria-label="在 Spotify 打开" data-i18n-aria="openSpotify" hidden><Icon name="simple-icons:spotify" aria-hidden="true" /></a>
+      <a class="spotify-open" data-spotify-link target="_blank" rel="noopener noreferrer" title="在 Spotify 打开" aria-label="在 Spotify 打开" data-i18n-aria="openSpotify" hidden><AdwIcon name="external-link" /></a>
     )}
   </div>
 </div>

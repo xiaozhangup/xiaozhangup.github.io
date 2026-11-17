@@ -64,7 +64,7 @@ const mobileContacts = menus.filter((menu) => menu.mobile !== false).flatMap((me
             <div class="clock-media-track" data-spotify-display hidden>
               <div class="music-cover"><Icon name="simple-icons:spotify" aria-hidden="true" /><img data-spotify-cover alt="" width="40" height="40" /></div>
               <div class="clock-track-text"><strong data-spotify-title></strong><span data-spotify-artist></span></div>
-              <a class="spotify-open" data-spotify-link target="_blank" rel="noopener noreferrer" title="在 Spotify 打开" aria-label="在 Spotify 打开" data-i18n-aria="openSpotify" hidden><Icon name="simple-icons:spotify" aria-hidden="true" /></a>
+              <a class="spotify-open" data-spotify-link target="_blank" rel="noopener noreferrer" title="在 Spotify 打开" aria-label="在 Spotify 打开" data-i18n-aria="openSpotify" hidden><AdwIcon name="external-link" /></a>
             </div>
           </div>
         </div>
@@ -121,7 +121,7 @@ const mobileContacts = menus.filter((menu) => menu.mobile !== false).flatMap((me
           <div class="quick-group quick-links">
             <h2 class="mobile-only" data-i18n="siteLinks">站点</h2>
             <div class="quick-rows">
-              <button type="button" class="quick-action quick-action--wide mobile-only app-copy-link" data-app-copy-link><AdwIcon name="insert-link" /><span data-i18n="copyLink">复制文章链接</span></button>
+              <button type="button" class="quick-action quick-action--wide mobile-only app-copy-link" data-app-copy-link><AdwIcon name="external-link" /><span data-i18n="copyLink">复制文章链接</span></button>
               <button type="button" class="quick-action" data-quick-action="library"><AdwIcon name="text-x-generic" /><span data-i18n="allPosts">全部文章</span></button>
               <button type="button" class="quick-action" data-quick-action="desktop"><AdwIcon name="user-desktop" /><span data-i18n="showDesktop">显示桌面</span></button>
               <button type="button" class="quick-action quick-action--wide" data-quick-action="about"><AdwIcon name="help-about" /><span data-i18n="about">关于博客</span><AdwIcon name="go-next" /></button>

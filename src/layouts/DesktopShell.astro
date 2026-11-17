@@ -3,6 +3,7 @@ import { getCollection, type CollectionEntry } from 'astro:content';
 import { Icon } from 'astro-icon/components';
 import { SITE_TITLE } from '@/config';
 import { friendLinks, labelPair, shortcuts } from '@/desktopLinks';
+import FriendWindow from '@/components/desktop/FriendWindow.astro';
 import DesktopBasics from '@/components/desktop/DesktopBasics.astro';
 import AdwIcon from '@/components/desktop/AdwIcon.astro';
 import ShellBar from '@/components/desktop/ShellBar.astro';
@@ -13,6 +14,7 @@ import WindowControls from '@/components/desktop/WindowControls.astro';
 import WindowResizeAreas from '@/components/desktop/WindowResizeAreas.astro';
 import { getAllPosts, sortPostsByPinAndDate, translationKey } from '@utils/blogUtils';
 import '@/styles/desktop.css';
+import '@/styles/link-icons.css';
 import '@/styles/shell.css';
 import '@/styles/motion.css';
 import '@/styles/mobile.css';
@@ -226,7 +228,7 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
             <h2>xiaozhangup</h2>
             <p data-i18n="welcome">欢迎来到我的个人博客。</p>
             <div class="about-links">
-              <a href="https://github.com/xiaozhangup" target="_blank" rel="noopener noreferrer"><Icon name="simple-icons:github" aria-hidden="true" /><span>GitHub</span><AdwIcon name="go-next" /></a>
+              <a href="https://github.com/xiaozhangup" target="_blank" rel="noopener noreferrer"><Icon name="simple-icons:github" aria-hidden="true" /><span>GitHub</span><AdwIcon name="external-link" /></a>
               <a href="/rss.xml"><AdwIcon name="application-rss+xml" /><span data-i18n="rss">RSS 订阅</span><AdwIcon name="go-next" /></a>
             </div>
           </div>
@@ -239,15 +241,16 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
         <p class="visually-hidden" id="desktop-trash-help-two" data-i18n="moveTrash">可用方向键移动回收站。</p>
         <div class="desktop-icons" data-i18n-aria="desktopShortcuts" aria-label="桌面快捷方式">
           <DesktopBasics shortcutHelp="desktop-shortcut-help-two" trashHelp="desktop-trash-help-two" />
-          {friendLinks.map((item) => {
+          {friendLinks.map((item, index) => {
             const label = labelPair(item.label);
             return (
-              <a href={item.href} target={item.newTab === false ? undefined : "_blank"} rel={item.newTab === false ? undefined : "noopener noreferrer"} class="desktop-shortcut" data-shortcut-home="top-right" aria-describedby="desktop-shortcut-help-two">
+              <a href={item.href} class="desktop-shortcut" data-shortcut-home="top-right" data-open-friend aria-controls={`friend-window-${index}`} aria-describedby="desktop-shortcut-help-two">
                 <img src={item.icon} alt="" /><span data-label-zh={label.zh} data-label-en={label.en}>{label.zh}</span>
               </a>
             );
           })}
         </div>
+        {friendLinks.map((item, index) => <FriendWindow id={`friend-window-${index}`} item={item} />)}
       </section>
       <div class="visually-hidden" aria-live="polite" data-announcer></div>
     </main>
