@@ -10,9 +10,9 @@ const { title = '文章', url, visible = false } = Astro.props;
   <header class="window-header">
     <div class="window-header-leading">
       <button type="button" class="toolbar-icon sidebar-toggle" data-reader-toc-toggle data-i18n-aria="showOutline" aria-controls="reader-toc-initial" aria-expanded="true" aria-label="显示或隐藏目录" title="显示或隐藏目录"><AdwIcon name="sidebar-show" /></button>
-      <a href="/blog/" data-open-library data-app-back class="toolbar-icon" data-i18n-aria="backToPosts" aria-label="返回文章列表" title="返回文章列表"><AdwIcon name="go-previous" /></a>
       <span class="window-name" data-i18n="outline">目录</span>
     </div>
+    <a href="/blog/" data-open-library data-app-back class="toolbar-icon" data-i18n-aria="backToPosts" aria-label="返回文章列表" title="返回文章列表"><AdwIcon name="go-previous" /></a>
     <button type="button" class="window-drag" data-drag-handle data-i18n-aria="moveWindow" aria-label="移动窗口，使用方向键调整位置" title="移动窗口，使用方向键调整位置"><span class="window-title" data-reader-title>{title}</span></button>
     <span class="mobile-reader-title mobile-only" data-reader-title>{title}</span>
     <div class="window-controls">

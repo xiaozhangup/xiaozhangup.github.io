@@ -275,7 +275,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
   pointer-events: none;
 }
 .sidebar-toggle { flex: none; }
-.window--reader [data-app-back] { display: none; }
+.window--reader [data-app-back] { z-index: 1; flex: none; margin-inline-start: 6px; }
 .window--reader .window-name {
   inset-inline-start: calc(var(--control-size) + 6px);
   inset-inline-end: 6px;
