@@ -276,10 +276,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
 }
 .sidebar-toggle { flex: none; }
 .window--reader [data-app-back] { z-index: 1; flex: none; margin-inline-start: 6px; }
-.window--reader .window-name {
-  inset-inline-start: calc(var(--control-size) + 6px);
-  inset-inline-end: 6px;
-}
 .window--library:where(:not([data-active])) :is(.window-header-leading, .library-sidebar) { background: var(--sidebar-backdrop-color); }
 .window--reader:where(:not([data-active])) :is(.window-header-leading, .reader-sidebar) { background: var(--sidebar-backdrop-color); }
 .window--library.sidebar-hidden .window-header-leading {
@@ -289,10 +285,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
 }
 .window--library.sidebar-hidden .window-name { opacity: 0; }
 .window--reader.sidebar-hidden .window-header-leading {
-  flex-basis: calc(var(--control-size) + 12px);
+  flex-basis: calc(var(--control-size) + 6px);
+  padding-inline-end: 0;
   background: transparent;
   box-shadow: none;
 }
+.window--reader.sidebar-hidden [data-app-back] { margin-inline-start: 0; }
 .window--reader.sidebar-hidden .window-name { opacity: 0; }
 
 .window-drag {
