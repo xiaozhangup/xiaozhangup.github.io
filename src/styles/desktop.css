@@ -531,16 +531,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
   left: max(12px, calc((100vw - 380px) / 2));
   top: max(var(--shell-height), calc((100dvh + var(--shell-height) - 300px) / 2));
 }
-.desktop[data-workspace='2']:has(.window--friend.is-maximized[data-visible]) > :is(.dock-anchor, .dock-edge) { visibility: hidden; }
-.friend-window-title {
-  position: absolute;
-  inset-inline: calc(2 * var(--control-size) + 15px);
-  text-align: center;
-  font-weight: 700;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+.window--friend-browser {
+  width: min(1000px, calc(100vw - 108px));
+  height: min(680px, calc(100dvh - var(--shell-height) - 24px));
+  left: max(54px, calc((100vw - 1000px) / 2));
+  top: max(calc(var(--shell-height) + 12px), calc((100dvh + var(--shell-height) - 680px) / 2));
 }
+.window--friend .window-drag { --title-inset: calc(2 * var(--control-size) + 15px); }
+.window--friend-browser .window-drag { --title-inset: calc(4 * var(--control-size) + 20px); }
+.window--friend-browser .window-controls > [data-maximize] { display: grid; }
 .friend-window-frame { flex: 1; width: 100%; min-height: 0; border: 0; }
 .friend-window-summary {
   flex: 1;

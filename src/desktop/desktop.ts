@@ -160,6 +160,7 @@ function switchWorkspace(next: 1 | 2) {
   workspaceButton.setAttribute('aria-pressed', String(!onFirst));
   firstWorkspace.inert = !onFirst;
   secondWorkspace.inert = onFirst;
+  visibleFriend?.item.classList.toggle('is-active', !onFirst);
   activeTitle.textContent = onFirst && activeWindow && isVisible(activeWindow) ? windowTitle(activeWindow) : t('desktop');
   document.title = onFirst && activeWindow && isVisible(activeWindow) ? pageTitle(activeWindow) : siteTitle();
   syncDockApps();
@@ -475,7 +476,7 @@ function prepareReader(reader: HTMLElement) {
   reader.querySelector('[data-reader-toc-toggle]')!.setAttribute('aria-controls', tocId);
   reader.querySelector<HTMLElement>('[data-reader-sidebar]')!.id = tocId;
   reader.classList.toggle('is-compact', mobileLayout.matches || reader.clientWidth < 588);
-  setReaderSidebar(reader, !mobileLayout.matches);
+  setReaderSidebar(reader, false);
   const scroll = reader.querySelector<HTMLElement>('[data-reader-content]')!;
   scroll.addEventListener('scroll', () => updateReaderOutline(reader), { passive: true });
   scroll.addEventListener('pointerdown', () => {
@@ -533,29 +534,92 @@ function prepareWindow(win: HTMLElement) {
 }
 
 const friendIcons = secondWorkspace.querySelector<HTMLElement>('.desktop-icons')!;
-let openedFriend: { panel: HTMLElement; shortcut: HTMLAnchorElement } | undefined;
 
-function closeFriend() {
-  if (!openedFriend) return;
-  const { panel, shortcut } = openedFriend;
+type FriendWindow = { panel: HTMLElement; shortcut: HTMLAnchorElement; item: HTMLAnchorElement };
+const friendWindows = new Map<HTMLElement, FriendWindow>();
+let visibleFriend: FriendWindow | undefined;
+
+function updateFriendDockLabel({ shortcut, item }: FriendWindow) {
+  const label = shortcut.textContent!.trim();
+  item.dataset.tooltip = label;
+  item.setAttribute('aria-label', label);
+}
+
+function hideFriend({ panel, item }: FriendWindow) {
   panel.hidden = true;
   panel.removeAttribute('data-visible');
-  panel.querySelector('iframe')?.removeAttribute('src');
+  item.classList.remove('is-active');
   friendIcons.inert = false;
-  openedFriend = undefined;
-  shortcut.focus({ preventScroll: true });
+  visibleFriend = undefined;
+  scheduleDockOverlap();
+}
+
+function showFriend(friend: FriendWindow) {
+  if (visibleFriend && visibleFriend !== friend) hideFriend(visibleFriend);
+  friendIcons.inert = true;
+  friend.panel.hidden = false;
+  friend.panel.setAttribute('data-visible', '');
+  friend.item.classList.add('is-active');
+  visibleFriend = friend;
+  fitWindow(friend.panel);
+  scheduleDockOverlap();
+  friend.panel.querySelector<HTMLElement>('[data-friend-external]')!.focus({ preventScroll: true });
+}
+
+function openFriend(shortcut: HTMLAnchorElement) {
+  const panel = document.getElementById(shortcut.getAttribute('aria-controls')!)!;
+  let friend = friendWindows.get(panel);
+  if (!friend) {
+    const item = dockTemplate.content.firstElementChild!.cloneNode(true) as HTMLAnchorElement;
+    item.removeAttribute('data-dock-window');
+    item.dataset.friendDock = panel.id;
+    item.href = shortcut.href;
+    item.querySelector('img')!.src = shortcut.querySelector('img')!.src;
+    friend = { panel, shortcut, item };
+    updateFriendDockLabel(friend);
+    dock.append(item);
+    friendWindows.set(panel, friend);
+    const frame = panel.querySelector('iframe');
+    if (frame) {
+      setMaximized(panel, true);
+      frame.src = shortcut.href;
+    }
+  }
+  showFriend(friend);
+}
+
+function closeFriend(friend: FriendWindow) {
+  hideFriend(friend);
+  friend.panel.querySelector('iframe')?.removeAttribute('src');
+  friend.item.remove();
+  friendWindows.delete(friend.panel);
+  friend.shortcut.focus({ preventScroll: true });
+}
+
+for (const panel of secondWorkspace.querySelectorAll<HTMLElement>('.window--friend')) {
+  const maximize = panel.querySelector('[data-maximize]') ? () => toggleMaximize(panel) : undefined;
+  bindWindowGeometry(panel, maximize, (resized) => announce(t(resized ? 'windowResized' : 'windowMoved')));
 }
 
 secondWorkspace.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && openedFriend) {
+  if (event.key === 'Escape' && visibleFriend) {
     event.preventDefault();
-    closeFriend();
+    closeFriend(visibleFriend);
   }
 });
 
 root.addEventListener('click', (event) => {
   const target = event.target as HTMLElement;
-  if (target.closest('[data-friend-close]')) { closeFriend(); return; }
+  const friendPanel = target.closest<HTMLElement>('.window--friend');
+  if (friendPanel) {
+    const friend = friendWindows.get(friendPanel)!;
+    if (target.closest('[data-friend-close]')) closeFriend(friend);
+    else if (target.closest('[data-friend-minimize]')) {
+      hideFriend(friend);
+      friend.item.focus({ preventScroll: true });
+    } else if (target.closest('[data-maximize]')) toggleMaximize(friendPanel);
+    return;
+  }
   const close = target.closest<HTMLAnchorElement>('[data-close-window]');
   if (close) { event.preventDefault(); closeWindow(close.closest<HTMLElement>('[data-window]')!); return; }
   const toggleSidebar = target.closest<HTMLButtonElement>('[data-toggle-sidebar]');
@@ -607,14 +671,16 @@ root.addEventListener('click', (event) => {
   if (!anchor || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || anchor.target === '_blank' || anchor.hasAttribute('download')) return;
   if (anchor.hasAttribute('data-open-friend')) {
     event.preventDefault();
-    const panel = document.getElementById(anchor.getAttribute('aria-controls')!)!;
-    const frame = panel.querySelector('iframe');
-    if (frame) frame.src = anchor.href;
-    friendIcons.inert = true;
-    panel.hidden = false;
-    panel.setAttribute('data-visible', '');
-    openedFriend = { panel, shortcut: anchor };
-    panel.querySelector<HTMLElement>('[data-friend-external]')!.focus({ preventScroll: true });
+    openFriend(anchor);
+    return;
+  }
+  if (anchor.hasAttribute('data-friend-dock')) {
+    event.preventDefault();
+    const panel = document.getElementById(anchor.dataset.friendDock!)!;
+    const friend = friendWindows.get(panel)!;
+    const switched = switchWorkspace(2);
+    if (!switched && friend === visibleFriend) hideFriend(friend);
+    else showFriend(friend);
     return;
   }
   if (anchor.hasAttribute('data-dock-window')) {
@@ -730,7 +796,8 @@ function isDockTarget(target: EventTarget | null) {
 function updateDockOverlap() {
   dock.classList.toggle('is-scrollable', dock.scrollHeight > dock.clientHeight);
   const bounds = dockAnchor.getBoundingClientRect();
-  const obscured = workspace === 1 && [...dockItems.keys()].some((win) => {
+  const windows = workspace === 1 ? dockItems.keys() : friendWindows.keys();
+  const obscured = [...windows].some((win) => {
     if (!isVisible(win)) return false;
     const rect = windowBox(win);
     return rect.left < bounds.right && rect.right > bounds.left && rect.top < bounds.bottom && rect.bottom > bounds.top;
@@ -745,7 +812,7 @@ function scheduleDockOverlap() {
   dockUpdateFrame = requestAnimationFrame(updateDockOverlap);
 }
 const dockWindowObserver = new MutationObserver((records) => {
-  if (records.some(({ target }) => (target as HTMLElement).hasAttribute('data-window'))) scheduleDockOverlap();
+  if (records.some(({ target }) => (target as HTMLElement).matches('[data-window], .window--friend'))) scheduleDockOverlap();
 });
 dockWindowObserver.observe(root, { subtree: true, attributes: true, attributeFilter: ['class', 'style', 'data-visible'] });
 new ResizeObserver(scheduleDockOverlap).observe(dockAnchor);
@@ -766,10 +833,7 @@ mobileLayout.addEventListener('change', () => {
   dismissDisclosure();
   if (mobileLayout.matches) switchWorkspace(1);
   syncSidebar();
-  for (const reader of readers.values()) {
-    updateReaderSidebarMode(reader);
-    setReaderSidebar(reader, !mobileLayout.matches);
-  }
+  for (const reader of readers.values()) updateReaderSidebarMode(reader);
   if (mobileLayout.matches && (!activeWindow || !isVisible(activeWindow))) {
     const next = [...dockItems.keys()].filter(isVisible).sort((a, b) => Number(b.style.zIndex) - Number(a.style.zIndex))[0] ?? library;
     focusWindow(next);
@@ -779,7 +843,10 @@ mobileLayout.addEventListener('change', () => {
   syncWindowAccess();
 });
 window.addEventListener('resize', () => {
-  if (!mobileLayout.matches) for (const win of dockItems.keys()) fitWindow(win);
+  if (!mobileLayout.matches) {
+    for (const win of dockItems.keys()) fitWindow(win);
+    if (workspace === 2 && visibleFriend) fitWindow(visibleFriend.panel);
+  }
 });
 
 const themeButton = document.querySelector<HTMLButtonElement>('[data-theme-toggle]')!;
@@ -828,6 +895,7 @@ function applyLanguage(next: Language) {
   document.documentElement.lang = language === 'zh' ? 'zh-CN' : 'en';
   appLanguage.value = language;
   translateStatic();
+  for (const friend of friendWindows.values()) updateFriendDockLabel(friend);
   document.querySelector<HTMLElement>('[data-language-indicator]')!.textContent = language === 'zh' ? '拼' : 'EN';
   document.querySelectorAll<HTMLButtonElement>('[data-set-language]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.setLanguage === language)));
   document.querySelectorAll<HTMLElement>('[data-post-title], [data-post-description]').forEach((el) => { el.textContent = el.dataset[language]!; });

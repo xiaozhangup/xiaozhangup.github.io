@@ -6,10 +6,10 @@ import WindowResizeAreas from './WindowResizeAreas.astro';
 interface Props { title?: string; url?: string; visible?: boolean }
 const { title = '文章', url, visible = false } = Astro.props;
 ---
-<section class="window window--reader" data-window="reader" data-visible={visible ? '' : undefined} data-active={visible ? '' : undefined} inert={!visible} data-article-url={url} aria-label="文章阅读器">
+<section class="window window--reader sidebar-hidden" data-window="reader" data-visible={visible ? '' : undefined} data-active={visible ? '' : undefined} inert={!visible} data-article-url={url} aria-label="文章阅读器">
   <header class="window-header">
     <div class="window-header-leading">
-      <button type="button" class="toolbar-icon sidebar-toggle" data-reader-toc-toggle data-i18n-aria="showOutline" aria-controls="reader-toc-initial" aria-expanded="true" aria-label="显示或隐藏目录" title="显示或隐藏目录"><AdwIcon name="sidebar-show" /></button>
+      <button type="button" class="toolbar-icon sidebar-toggle" data-reader-toc-toggle data-i18n-aria="showOutline" aria-controls="reader-toc-initial" aria-expanded="false" aria-label="显示或隐藏目录" title="显示或隐藏目录"><AdwIcon name="sidebar-show" /></button>
       <span class="window-name" data-i18n="outline">目录</span>
     </div>
     <a href="/blog/" data-open-library data-app-back class="toolbar-icon" data-i18n-aria="backToPosts" aria-label="返回文章列表" title="返回文章列表"><AdwIcon name="go-previous" /></a>
@@ -21,7 +21,7 @@ const { title = '文章', url, visible = false } = Astro.props;
     </div>
   </header>
   <div class="reader-layout">
-    <aside class="library-sidebar reader-sidebar" id="reader-toc-initial" data-reader-sidebar>
+    <aside class="library-sidebar reader-sidebar" id="reader-toc-initial" data-reader-sidebar inert>
       <nav data-reader-toc data-i18n-aria="outline" aria-label="目录"><slot name="toc" /></nav>
     </aside>
     <div class="reader-scroll" data-reader-content><slot /></div>

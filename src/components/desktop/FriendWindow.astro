@@ -1,6 +1,7 @@
 ---
 import { labelPair, type FriendLink } from '@/desktopLinks';
 import AdwIcon from './AdwIcon.astro';
+import WindowResizeAreas from './WindowResizeAreas.astro';
 
 interface Props {
   id: string;
@@ -10,11 +11,17 @@ const { id, item } = Astro.props;
 const label = labelPair(item.label);
 const host = new URL(item.href).hostname;
 ---
-<section id={id} class:list={['window', 'window--friend', { 'is-maximized': item.embed }]} data-active aria-labelledby={`${id}-title`} hidden>
+<section id={id} class:list={['window', 'window--friend', { 'window--friend-browser': item.embed, 'is-maximized': item.embed }]} data-active aria-labelledby={`${id}-title`} hidden>
   <header class="window-header">
-    <span id={`${id}-title`} class="friend-window-title" data-label-zh={label.zh} data-label-en={label.en}>{label.zh}</span>
+    <button type="button" class="window-drag" data-drag-handle data-i18n-aria="moveWindow" aria-label="移动窗口，使用方向键调整位置">
+      <span id={`${id}-title`} class="window-title" data-label-zh={label.zh} data-label-en={label.en}>{label.zh}</span>
+    </button>
     <div class="window-controls">
       <a href={item.href} target="_blank" rel="noopener noreferrer" class="toolbar-icon" data-friend-external data-i18n-aria="openInNewTab" aria-label="在新标签页打开" title="在新标签页打开"><AdwIcon name="external-link" /></a>
+      {item.embed && <>
+        <button type="button" class="window-control" data-friend-minimize data-i18n-aria="minimize" aria-label="最小化" title="最小化"><AdwIcon name="window-minimize" /></button>
+        <button type="button" class="window-control" data-maximize data-i18n-aria="maximize" aria-pressed="true" aria-label="最大化或还原" title="最大化或还原"><AdwIcon name="window-maximize" class="maximize-icon" /><AdwIcon name="window-restore" class="restore-icon" /></button>
+      </>}
       <button type="button" class="window-control" data-friend-close data-i18n-aria="close" aria-label="关闭" title="关闭"><AdwIcon name="window-close" /></button>
     </div>
   </header>
@@ -28,4 +35,5 @@ const host = new URL(item.href).hostname;
       <a href={item.href} target="_blank" rel="noopener noreferrer" data-i18n="openInNewTab">在新标签页打开</a>
     </div>
   )}
+  {item.embed && <WindowResizeAreas />}
 </section>

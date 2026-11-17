@@ -130,7 +130,7 @@ export function beginKeyboardResize(win: HTMLElement) {
 
 export function bindWindowGeometry(
   win: HTMLElement,
-  toggleMaximize: () => void,
+  toggleMaximize: (() => void) | undefined,
   positionChanged: (resized: boolean) => void,
 ) {
   const handle = win.querySelector<HTMLButtonElement>('[data-drag-handle]')!;
@@ -158,7 +158,7 @@ export function bindWindowGeometry(
     });
   }
 
-  if (win.dataset.window !== 'about') handle.addEventListener('dblclick', toggleMaximize);
+  if (toggleMaximize && win.dataset.window !== 'about') handle.addEventListener('dblclick', toggleMaximize);
   handle.addEventListener('blur', () => win.removeAttribute('data-keyboard-resize'));
   handle.addEventListener('keydown', (event) => {
     const sizing = win.hasAttribute('data-keyboard-resize');
