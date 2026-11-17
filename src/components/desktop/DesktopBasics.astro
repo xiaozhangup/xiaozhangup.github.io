@@ -1,0 +1,9 @@
+---
+interface Props { shortcutHelp: string; trashHelp: string }
+const { shortcutHelp, trashHelp } = Astro.props;
+---
+<a href="/blog/" data-open-library class="desktop-shortcut" aria-describedby={shortcutHelp}><img src="/adwaita/color/folder-documents.svg" alt="" /><span data-i18n="posts">文章</span></a>
+<a href="/blog/archives/" data-desktop-filter="archives" class="desktop-shortcut" aria-describedby={shortcutHelp}><img src="/adwaita/color/folder-projects.svg" alt="" /><span data-i18n="archives">归档</span></a>
+<button type="button" class="desktop-shortcut desktop-trash" data-desktop-trash aria-describedby={trashHelp}>
+  <img src="/adwaita/color/user-trash.svg" alt="" /><span data-i18n="trash">回收站</span>
+</button>

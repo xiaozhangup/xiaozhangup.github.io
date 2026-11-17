@@ -12,7 +12,7 @@
 
   .desktop { height: 100dvh; bottom: auto; background: var(--window-bg-color); }
   .desktop-workspace { background: none; }
-  .desktop-workspace--empty { display: none; }
+  .desktop-workspace--friends { display: none; }
   .dock-anchor, .dock-edge, .desktop-icons { display: none; }
   .skip-link:focus { transform: translateY(6px); }
 

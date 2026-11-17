@@ -2,7 +2,8 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import { Icon } from 'astro-icon/components';
 import { SITE_TITLE } from '@/config';
-import { labelPair, shortcuts } from '@/desktopLinks';
+import { friendLinks, labelPair, shortcuts } from '@/desktopLinks';
+import DesktopBasics from '@/components/desktop/DesktopBasics.astro';
 import AdwIcon from '@/components/desktop/AdwIcon.astro';
 import ShellBar from '@/components/desktop/ShellBar.astro';
 import ReaderWindow from '@/components/desktop/ReaderWindow.astro';
@@ -83,11 +84,7 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
         <p class="visually-hidden" id="desktop-shortcut-help" data-i18n="moveShortcut">可用方向键移动桌面图标，按 Delete 移至回收站。</p>
         <p class="visually-hidden" id="desktop-trash-help" data-i18n="moveTrash">可用方向键移动回收站。</p>
         <div class="desktop-icons" data-i18n-aria="desktopShortcuts" aria-label="桌面快捷方式">
-          <a href="/blog/" data-open-library class="desktop-shortcut" aria-describedby="desktop-shortcut-help"><img src="/adwaita/color/folder-documents.svg" alt="" /><span data-i18n="posts">文章</span></a>
-          <a href="/blog/archives/" data-desktop-filter="archives" class="desktop-shortcut" aria-describedby="desktop-shortcut-help"><img src="/adwaita/color/folder-projects.svg" alt="" /><span data-i18n="archives">归档</span></a>
-          <button type="button" class="desktop-shortcut desktop-trash" data-desktop-trash aria-describedby="desktop-trash-help">
-            <img src="/adwaita/color/user-trash.svg" alt="" /><span data-i18n="trash">回收站</span>
-          </button>
+          <DesktopBasics shortcutHelp="desktop-shortcut-help" trashHelp="desktop-trash-help" />
           <a href="/music/" data-open-music class="desktop-shortcut" data-shortcut-home="top-right" aria-describedby="desktop-shortcut-help"><img src="/adwaita/color/gnome-music.svg" alt="" /><span data-i18n="music">音乐</span></a>
           <a href="/about/" data-open-about class="desktop-shortcut" data-shortcut-home="top-right" aria-describedby="desktop-shortcut-help"><img src="/adwaita/color/help-about.svg" alt="" /><span data-i18n="aboutShort">关于</span></a>
           {shortcuts.map((item) => {
@@ -237,7 +234,21 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
         </section>
         <MusicWindow active={initialWindow === 'music'} />
       </section>
-      <section class="desktop-workspace desktop-workspace--empty" id="workspace-two" aria-label="工作区 2" data-i18n-aria="workspaceTwo" inert></section>
+      <section class="desktop-workspace desktop-workspace--friends" id="workspace-two" aria-label="工作区 2" data-i18n-aria="workspaceTwo" inert>
+        <p class="visually-hidden" id="desktop-shortcut-help-two" data-i18n="moveShortcut">可用方向键移动桌面图标，按 Delete 移至回收站。</p>
+        <p class="visually-hidden" id="desktop-trash-help-two" data-i18n="moveTrash">可用方向键移动回收站。</p>
+        <div class="desktop-icons" data-i18n-aria="desktopShortcuts" aria-label="桌面快捷方式">
+          <DesktopBasics shortcutHelp="desktop-shortcut-help-two" trashHelp="desktop-trash-help-two" />
+          {friendLinks.map((item) => {
+            const label = labelPair(item.label);
+            return (
+              <a href={item.href} target={item.newTab === false ? undefined : "_blank"} rel={item.newTab === false ? undefined : "noopener noreferrer"} class="desktop-shortcut" data-shortcut-home="top-right" aria-describedby="desktop-shortcut-help-two">
+                <img src={item.icon} alt="" /><span data-label-zh={label.zh} data-label-en={label.en}>{label.zh}</span>
+              </a>
+            );
+          })}
+        </div>
+      </section>
       <div class="visually-hidden" aria-live="polite" data-announcer></div>
     </main>
     <script src="../desktop/desktop.ts"></script>

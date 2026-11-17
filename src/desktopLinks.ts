@@ -1,5 +1,6 @@
 import yaml from 'js-yaml';
 import desktopYaml from '../configs/desktop-shortcuts.yaml?raw';
+import friendLinksYaml from '../configs/friend-links.yaml?raw';
 import contactsYaml from '../configs/topbar-contacts.yaml?raw';
 
 export type LocalizedLabel = string | { zh: string; en: string };
@@ -17,4 +18,5 @@ export function labelPair(label: LocalizedLabel) {
 }
 
 export const { shortcuts } = yaml.load(desktopYaml) as { shortcuts: Shortcut[] };
+export const { shortcuts: friendLinks } = yaml.load(friendLinksYaml) as { shortcuts: Shortcut[] };
 export const { menus } = yaml.load(contactsYaml) as { menus: ContactMenu[] };

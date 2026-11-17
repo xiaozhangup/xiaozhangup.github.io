@@ -95,9 +95,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
   background: var(--desktop-wallpaper) center / cover no-repeat #172936;
 }
 @media (width > 760px) and ((height > 480px) or (pointer: fine) or (pointer: none)) {
-  .desktop-workspace--empty { translate: calc(100% + var(--workspace-spacing)); }
+  .desktop-workspace--friends { translate: calc(100% + var(--workspace-spacing)); }
   .desktop[data-workspace='2'] > .desktop-workspace { translate: calc(-100% - var(--workspace-spacing)); }
-  .desktop[data-workspace='2'] > .desktop-workspace--empty { translate: 0; }
+  .desktop[data-workspace='2'] > .desktop-workspace--friends { translate: 0; }
 }
 .dock-anchor { position: fixed; z-index: 10000; top: 50%; left: var(--dock-left); width: var(--dock-width); transform: translateY(-50%); pointer-events: none; }
 .dock { display: flex; flex-direction: column; align-items: center; padding: 8px 5px; width: 100%; border-radius: 18px; background: rgba(18, 18, 20, .9); pointer-events: auto; transition: transform 200ms ease-out, opacity 200ms ease-out; }

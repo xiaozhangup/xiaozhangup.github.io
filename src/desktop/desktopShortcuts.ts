@@ -80,23 +80,27 @@ export function initDesktopShortcuts(grid: HTMLElement, announce: (label: string
     const bottomUp = Array.from({ length: (frame.lastColumn + 1) * rows }, (_, index) => ({
       column: frame.lastColumn - Math.floor(index / rows), row: frame.lastRow - index % rows,
     }));
+    const topDown = Array.from({ length: bottomUp.length }, (_, index) => ({
+      column: Math.floor(index / rows), row: index % rows,
+    }));
     function placeAvailable(tile: HTMLElement, preferred: Cell) {
       const cell = bounded(preferred);
       const reserveGap = tile.dataset.shortcutHome === 'bottom-left' && !moved.has(tile);
       const available = (candidate: Cell) =>
         !occupied(tile, candidate) && !(reserveGap && sameCell(candidate, gapBelowTrash));
-      place(tile, available(cell) ? cell : bottomUp.find(available) ?? cell);
+      const order = tile.dataset.shortcutHome === 'top-right' ? topDown : bottomUp;
+      place(tile, available(cell) ? cell : order.find(available) ?? cell);
     }
     for (const tile of moved) {
       const old = oldCells.get(tile)!;
       placeAvailable(tile, { column: old.column === previous.lastColumn ? frame.lastColumn : old.column, row: old.row });
     }
     let left = frame.lastColumn;
-    let rightRow = 0;
+    let rightIndex = 0;
     for (const tile of tiles) {
       if (tile.hidden) continue;
       const home = tile === trash ? trashHome
-        : tile.dataset.shortcutHome === 'top-right' ? { column: 0, row: rightRow++ }
+        : tile.dataset.shortcutHome === 'top-right' ? { column: Math.floor(rightIndex / rows), row: rightIndex++ % rows }
         : tile.dataset.shortcutHome === 'bottom-left' ? { column: frame.lastColumn, row: frame.lastRow }
         : { column: left--, row: 0 };
       if (!moved.has(tile)) placeAvailable(tile, home);

@@ -152,7 +152,7 @@ function switchWorkspace(next: 1 | 2) {
   articleRequest++;
   dismissDisclosure(true);
   const onFirst = next === 1;
-  if (!onFirst && firstWorkspace.contains(document.activeElement)) {
+  if ((onFirst ? secondWorkspace : firstWorkspace).contains(document.activeElement)) {
     workspaceButton.focus({ preventScroll: true });
   }
   workspace = next;
@@ -625,7 +625,9 @@ root.addEventListener('click', (event) => {
 });
 new ResizeObserver(updateSidebarMode).observe(library);
 updateSidebarMode();
-initDesktopShortcuts(root.querySelector<HTMLElement>('.desktop-icons')!, (label, action) => announce(`${label} ${t(action)}`));
+for (const grid of root.querySelectorAll<HTMLElement>('.desktop-icons')) {
+  initDesktopShortcuts(grid, (label, action) => announce(`${label} ${t(action)}`));
+}
 initDisclosures();
 workspaceButton.addEventListener('click', () => switchWorkspace(workspace === 1 ? 2 : 1));
 workspaceButton.addEventListener('wheel', (event) => {
