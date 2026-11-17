@@ -62,7 +62,7 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
     <link rel="alternate" type="application/rss+xml" title="xiaozhangup 的博客" href="/rss.xml" />
     <link rel="preload" as="image" href="/wallpapers/desktop-wide.jpg" media={`${desktopMedia} and (aspect-ratio <= 21/10)`} />
     <link rel="preload" as="image" href="/wallpapers/desktop-ultrawide.jpg" media={`${desktopMedia} and (aspect-ratio > 21/10)`} />
-    <title>{title} - xiaozhangup 的博客</title>
+    <title>{article ? title : 'xiaozhangup 的博客'}</title>
   </head>
   <body data-initial-window={initialWindow} data-initial-filter={initialFilter} data-filter-value={filterValue}>
     <a class="skip-link" href="#desktop-main" data-i18n="skipToContent">跳到主要内容</a>

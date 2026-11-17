@@ -61,7 +61,7 @@ let articleRequest = 0;
 let language: Language = 'zh';
 try { if (localStorage.getItem('desktop-language') === 'en') language = 'en'; } catch { /* Use Chinese when storage is unavailable. */ }
 const t = (key: string) => messages[language][key];
-const blogTitle = (title: string) => `${title} - ${language === 'zh' ? 'xiaozhangup 的博客' : "xiaozhangup's Blog"}`;
+const siteTitle = () => language === 'zh' ? 'xiaozhangup 的博客' : "xiaozhangup's Blog";
 const postCount = (count: number) => language === 'zh' ? `${count} 篇文章` : `${count} ${count === 1 ? 'post' : 'posts'}`;
 
 function translateStatic(scope: ParentNode = document) {
@@ -113,6 +113,9 @@ function windowTitle(win: HTMLElement) {
   if (win === music) return t('music');
   return visibleReaderHeading(win)?.textContent?.trim() || t('reader');
 }
+function pageTitle(win: HTMLElement | null) {
+  return win && windowKind(win) === 'reader' && win.querySelector('[data-article-fragment]') ? windowTitle(win) : siteTitle();
+}
 function updateDockItem(win: HTMLElement, item: HTMLAnchorElement) {
   const title = win === library ? t('posts') : windowTitle(win);
   item.href = windowRoute(win);
@@ -158,6 +161,7 @@ function switchWorkspace(next: 1 | 2) {
   firstWorkspace.inert = !onFirst;
   secondWorkspace.inert = onFirst;
   activeTitle.textContent = onFirst && activeWindow && isVisible(activeWindow) ? windowTitle(activeWindow) : t('desktop');
+  document.title = onFirst && activeWindow && isVisible(activeWindow) ? pageTitle(activeWindow) : siteTitle();
   syncDockApps();
   scheduleDockOverlap();
   announce(t(onFirst ? 'workspaceOne' : 'workspaceTwo'));
@@ -229,7 +233,7 @@ function setFilter(kind: FilterKind, value = '', updateUrl = false, url = '/blog
     pushUrl(url);
   }
   updateLibraryLabels();
-  document.title = blogTitle(heading.textContent!);
+  document.title = siteTitle();
   setSearchVisible(kind === 'search');
   if (kind !== 'search') searchInput.value = '';
   else searchInput.value = new URLSearchParams(location.search).get('q') || value;
@@ -354,7 +358,7 @@ async function openArticle(url: string, updateUrl = true) {
     if (serial !== articleRequest) return;
     focusWindow(reader, true);
     if (updateUrl) pushUrl(path + requested.search + requested.hash);
-    document.title = blogTitle(windowTitle(reader));
+    document.title = pageTitle(reader);
     visibleReaderHeading(reader)?.focus({ preventScroll: true });
     scrollToArticleAnchor(reader, requested.hash);
   } catch {
@@ -404,11 +408,11 @@ function focusNextWindow() {
   if (next) {
     focusWindow(next);
     history.replaceState(history.state, '', windowRoute(next));
-    document.title = blogTitle(windowTitle(next));
+    document.title = pageTitle(next);
   } else {
     activeWindow = null;
     activeTitle.textContent = t('desktop');
-    document.title = blogTitle(t('desktop'));
+    document.title = siteTitle();
   }
 }
 function syncSidebar() {
@@ -519,7 +523,7 @@ function activateWindow(win: HTMLElement) {
   const switched = switchWorkspace(1);
   focusWindow(win, !switched);
   pushUrl(windowRoute(win));
-  document.title = blogTitle(windowTitle(win));
+  document.title = pageTitle(win);
   requestWindowFocus(win);
 }
 function prepareWindow(win: HTMLElement) {
@@ -674,7 +678,7 @@ window.addEventListener('popstate', () => {
   else if (path === '/about' || path === '/music') {
     const win = path === '/music' ? music : about;
     focusWindow(win);
-    document.title = blogTitle(windowTitle(win));
+    document.title = pageTitle(win);
   }
   else if (location.pathname.startsWith('/blog/')) void openArticle(location.href, false);
 });
@@ -734,7 +738,7 @@ mobileLayout.addEventListener('change', () => {
     const next = [...dockItems.keys()].filter(isVisible).sort((a, b) => Number(b.style.zIndex) - Number(a.style.zIndex))[0] ?? library;
     focusWindow(next);
     history.replaceState(history.state, '', windowRoute(next));
-    document.title = blogTitle(windowTitle(next));
+    document.title = pageTitle(next);
   }
   syncWindowAccess();
 });
@@ -807,8 +811,11 @@ function applyLanguage(next: Language) {
   listeningWindow.updateLabels();
   if (activeWindow && isVisible(activeWindow)) {
     activeTitle.textContent = workspace === 1 ? windowTitle(activeWindow) : t('desktop');
-    document.title = blogTitle(windowTitle(activeWindow));
-  } else activeTitle.textContent = t('desktop');
+    document.title = workspace === 1 ? pageTitle(activeWindow) : siteTitle();
+  } else {
+    activeTitle.textContent = t('desktop');
+    document.title = siteTitle();
+  }
 }
 function changeLanguage(next: Language) {
   applyLanguage(next);
@@ -849,7 +856,7 @@ document.querySelectorAll<HTMLButtonElement>('[data-quick-action]').forEach((but
     }
     activeWindow = null;
     activeTitle.textContent = t('desktop');
-    document.title = blogTitle(t('desktop'));
+    document.title = siteTitle();
   }
   dismissDisclosure(true);
 }));
