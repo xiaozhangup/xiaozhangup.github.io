@@ -185,6 +185,7 @@
   }
   html[data-motion='off'] .window--reader .reader-sidebar { translate: none; transition: none; }
   .window--reader .window-header-leading { flex: none; background: transparent; box-shadow: none; }
+  .window--reader [data-app-back] { display: flex; }
   .window--reader .window-name { display: none; }
   .mobile-reader-title { inset-inline: calc(2 * var(--app-control-size) + var(--app-header-inset)); }
   .article-document {
