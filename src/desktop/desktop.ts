@@ -61,7 +61,7 @@ let articleRequest = 0;
 let language: Language = 'zh';
 try { if (localStorage.getItem('desktop-language') === 'en') language = 'en'; } catch { /* Use Chinese when storage is unavailable. */ }
 const t = (key: string) => messages[language][key];
-const siteTitle = () => language === 'zh' ? 'xiaozhangup 的博客' : "xiaozhangup's Blog";
+const siteTitle = () => 'xiaozhangup 的博客';
 const postCount = (count: number) => language === 'zh' ? `${count} 篇文章` : `${count} ${count === 1 ? 'post' : 'posts'}`;
 
 function translateStatic(scope: ParentNode = document) {
