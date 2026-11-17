@@ -290,7 +290,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
   background: transparent;
   box-shadow: none;
 }
-.window--reader.sidebar-hidden [data-app-back] { margin-inline-start: 0; }
+.window--reader.sidebar-hidden [data-app-back] { margin-inline-start: 3px; }
 .window--reader.sidebar-hidden .window-name { opacity: 0; }
 
 .window-drag {
