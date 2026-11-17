@@ -209,7 +209,10 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
           <WindowResizeAreas />
         </section>
 
-        {initialWindow === 'reader' && <ReaderWindow title={title} url={Astro.url.pathname} visible><slot name="article" /></ReaderWindow>}
+        {initialWindow === 'reader' && <ReaderWindow title={title} url={Astro.url.pathname} visible>
+          <slot name="article" />
+          <Fragment slot="toc"><slot name="toc" /></Fragment>
+        </ReaderWindow>}
         <template data-reader-template><ReaderWindow /></template>
 
         <section class="window window--about" data-window="about" data-visible={initialWindow === 'about' ? '' : undefined} data-active={initialWindow === 'about' ? '' : undefined} inert={initialWindow !== 'about'} aria-label="关于博客">

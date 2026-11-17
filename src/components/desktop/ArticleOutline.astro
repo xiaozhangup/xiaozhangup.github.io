@@ -1,0 +1,32 @@
+---
+import type { MarkdownHeading } from 'astro';
+
+interface Props {
+  headings: MarkdownHeading[];
+  translatedHeadings?: MarkdownHeading[];
+}
+const { headings, translatedHeadings } = Astro.props;
+const versions = [
+  { language: 'zh', headings },
+  ...(translatedHeadings ? [{ language: 'en', headings: translatedHeadings }] : []),
+];
+---
+<div data-article-outline>
+  {versions.map((version) => (
+    <div data-toc-language={version.language} hidden={version.language !== 'zh'}>
+      {version.headings.length ? (
+        <div class="library-nav">
+          {version.headings.map((item) => (
+            <a class="side-link reader-toc-link" href={`#${encodeURIComponent(item.slug)}`}
+              data-reader-toc-link data-toc-slug={item.slug}
+              style={`--toc-indent: ${Math.min(Math.max(item.depth - 2, 0), 3) * 12}px`}>
+              <span>{item.text}</span>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <p class="reader-toc-empty" data-i18n="emptyOutline">暂无目录</p>
+      )}
+    </div>
+  ))}
+</div>

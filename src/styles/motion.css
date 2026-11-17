@@ -61,18 +61,18 @@
   transition: background-color var(--control-duration) ease-out, color var(--control-duration) ease-out, border-color var(--control-duration) ease-out;
 }
 
-.library-layout { transition: grid-template-columns 180ms var(--motion-ease); }
-.window--library .window-header-leading {
+.library-layout, .reader-layout { transition: grid-template-columns 180ms var(--motion-ease); }
+.window--library .window-header-leading, .window--reader .window-header-leading {
   transition: flex-basis 180ms var(--motion-ease), background-color var(--control-duration);
 }
 .window-name, .dock-item::after, [data-spotify-cover] { transition: opacity var(--control-duration) ease-out; }
 .library-sidebar { transition: opacity 165ms ease-out, background-color var(--control-duration); }
 @container desktop-window (width < 588px) {
-  .window--library .library-sidebar {
+  .window--library .library-sidebar, .window--reader .reader-sidebar {
     translate: -12px;
     transition: opacity 165ms ease-out, translate 165ms var(--motion-ease), visibility 0s 165ms;
   }
-  .window--library.sidebar-open .library-sidebar { translate: none; transition-delay: 0s; }
+  .window--library.sidebar-open .library-sidebar, .window--reader.sidebar-open .reader-sidebar { translate: none; transition-delay: 0s; }
 }
 .skip-link { transition: transform 120ms var(--motion-ease); }
 .music-progress i { transition: transform 500ms linear; }
@@ -118,21 +118,24 @@
 
 @media (prefers-reduced-motion: reduce) {
   .disclosure-panel, [data-disclosure][data-open] > .disclosure-panel, .window, .window[data-visible],
-  .window--library .library-sidebar, .window--library.sidebar-open .library-sidebar {
+  .window--library .library-sidebar, .window--library.sidebar-open .library-sidebar,
+  .window--reader .reader-sidebar, .window--reader.sidebar-open .reader-sidebar {
     scale: none;
     translate: none;
     transition: opacity 75ms ease-out, visibility 0s;
   }
-  .library-layout, .window--library .window-header-leading, .dock, .skip-link, .music-progress i { transition: none; }
+  .library-layout, .reader-layout, .window--library .window-header-leading, .window--reader .window-header-leading, .dock, .skip-link, .music-progress i { transition: none; }
 }
 
 html[data-motion='off'] {
   --control-duration: 0s;
 }
-html[data-motion='off'] :is(.disclosure-panel, .window, .library-layout, .window-header-leading, .dock, .music-progress i, .skip-link),
+html[data-motion='off'] :is(.disclosure-panel, .window, .library-layout, .reader-layout, .window-header-leading, .dock, .music-progress i, .skip-link),
 html[data-motion='off'] [data-disclosure][data-open] > .disclosure-panel,
 html[data-motion='off'] .window--library .library-sidebar,
-html[data-motion='off'] .window--library.sidebar-open .library-sidebar {
+html[data-motion='off'] .window--library.sidebar-open .library-sidebar,
+html[data-motion='off'] .window--reader .reader-sidebar,
+html[data-motion='off'] .window--reader.sidebar-open .reader-sidebar {
   scale: none;
   translate: none;
   transition: none;

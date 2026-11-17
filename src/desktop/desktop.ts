@@ -84,6 +84,10 @@ function applyArticleLanguage(reader: HTMLElement) {
   const variants = Array.from(reader.querySelectorAll<HTMLElement>('[data-article-language]'));
   const selected = language === 'en' && variants.some((item) => item.dataset.articleLanguage === 'en') ? 'en' : 'zh';
   variants.forEach((item) => { item.hidden = item.dataset.articleLanguage !== selected; });
+  reader.querySelectorAll<HTMLElement>('[data-toc-language]').forEach((item) => {
+    item.hidden = item.dataset.tocLanguage !== selected;
+  });
+  updateReaderOutline(reader);
 }
 function visibleReaderHeading(reader: HTMLElement) {
   return reader.querySelector<HTMLElement>('[data-article-language]:not([hidden]) h1') || reader.querySelector<HTMLElement>('h1');
@@ -183,6 +187,7 @@ function focusWindow(win: HTMLElement, fly = false) {
   activeWindow = win;
   for (const other of dockItems.keys()) other.toggleAttribute('data-active', other === win);
   syncWindowAccess();
+  if (windowKind(win) === 'reader') updateReaderOutline(win);
   syncDockApps();
   activeTitle.textContent = windowTitle(win);
 }
@@ -291,6 +296,7 @@ async function loadReader(path: string) {
   const page = new DOMParser().parseFromString(await response.text(), 'text/html');
   const article = page.querySelector<HTMLElement>('[data-article-fragment]');
   if (!article) throw new Error('Article not found');
+  const outline = page.querySelector<HTMLElement>('[data-article-outline]');
   for (const sheet of page.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"][href]')) {
     const href = new URL(sheet.getAttribute('href')!, response.url).href;
     if (![...document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')].some((existing) => existing.href === href)) {
@@ -302,9 +308,7 @@ async function loadReader(path: string) {
 
   const reader = readerTemplate.content.firstElementChild!.cloneNode(true) as HTMLElement;
   reader.dataset.articleUrl = path;
-  const menuId = `reader-actions-${++readerNumber}`;
-  reader.querySelector('[data-disclosure-trigger]')!.setAttribute('aria-controls', menuId);
-  reader.querySelector('.window-menu-popover')!.id = menuId;
+  if (outline) reader.querySelector('[data-reader-toc]')!.append(outline);
   reader.querySelector('[data-reader-content]')!.append(article);
   firstWorkspace.append(reader);
   if (!mobileLayout.matches && readers.size) {
@@ -319,6 +323,7 @@ async function loadReader(path: string) {
   syncReaderTitle(reader);
   readers.set(path, reader);
   prepareWindow(reader);
+  prepareReader(reader);
   dockItemFor(reader);
   return reader;
 }
@@ -382,6 +387,7 @@ function closeWindow(win: HTMLElement) {
     void Promise.allSettled(transitions.map((transition) => transition.finished)).then(() => item.remove());
   }
   if (windowKind(win) === 'reader') {
+    readerResizeObserver.unobserve(win);
     readers.delete(win.dataset.articleUrl!);
     win.remove();
   } else hideWindow(win);
@@ -418,6 +424,63 @@ function updateSidebarMode() {
     library.classList.remove('sidebar-open');
   }
   syncSidebar();
+}
+function setReaderSidebar(reader: HTMLElement, open: boolean) {
+  const compact = reader.classList.contains('is-compact');
+  reader.classList.toggle('sidebar-open', compact && open);
+  reader.classList.toggle('sidebar-hidden', !compact && !open);
+  reader.querySelector<HTMLElement>('[data-reader-sidebar]')!.inert = !open;
+  reader.querySelector<HTMLButtonElement>('[data-reader-toc-toggle]')!.setAttribute('aria-expanded', String(open));
+}
+function updateReaderSidebarMode(reader: HTMLElement) {
+  if (!reader.clientWidth && !mobileLayout.matches) return;
+  const compact = mobileLayout.matches || reader.clientWidth < 588;
+  if (compact !== reader.classList.contains('is-compact')) {
+    const open = reader.querySelector('[data-reader-toc-toggle]')!.getAttribute('aria-expanded') === 'true';
+    reader.classList.toggle('is-compact', compact);
+    setReaderSidebar(reader, open);
+  }
+}
+const readerResizeObserver = new ResizeObserver((entries) => {
+  for (const entry of entries) updateReaderSidebarMode(entry.target as HTMLElement);
+});
+function updateReaderOutline(reader: HTMLElement) {
+  const scroll = reader.querySelector<HTMLElement>('[data-reader-content]')!;
+  const content = reader.querySelector<HTMLElement>('[data-article-language]:not([hidden])');
+  const outline = reader.querySelector<HTMLElement>('[data-toc-language]:not([hidden])');
+  if (!content || !outline) return;
+  const headings = [...content.querySelectorAll<HTMLElement>('.article-body :is(h1, h2, h3, h4, h5, h6)[id]')];
+  const top = scroll.getBoundingClientRect().top + 32;
+  let current = headings.filter((item) => item.getBoundingClientRect().top <= top).at(-1);
+  if (scroll.scrollHeight > scroll.clientHeight && scroll.scrollTop + scroll.clientHeight >= scroll.scrollHeight - 1) {
+    current = headings.at(-1);
+  }
+  for (const link of outline.querySelectorAll<HTMLAnchorElement>('[data-reader-toc-link]')) {
+    const active = link.dataset.tocSlug === current?.id;
+    link.classList.toggle('is-selected', active);
+    if (active) link.setAttribute('aria-current', 'location');
+    else link.removeAttribute('aria-current');
+  }
+}
+function prepareReader(reader: HTMLElement) {
+  const number = ++readerNumber;
+  const menuId = `reader-actions-${number}`;
+  const tocId = `reader-toc-${number}`;
+  reader.querySelector('[data-disclosure-trigger]')!.setAttribute('aria-controls', menuId);
+  reader.querySelector<HTMLElement>('.window-menu-popover')!.id = menuId;
+  reader.querySelector('[data-reader-toc-toggle]')!.setAttribute('aria-controls', tocId);
+  reader.querySelector<HTMLElement>('[data-reader-sidebar]')!.id = tocId;
+  reader.classList.toggle('is-compact', mobileLayout.matches || reader.clientWidth < 588);
+  setReaderSidebar(reader, !mobileLayout.matches);
+  const scroll = reader.querySelector<HTMLElement>('[data-reader-content]')!;
+  scroll.addEventListener('scroll', () => updateReaderOutline(reader), { passive: true });
+  scroll.addEventListener('pointerdown', () => {
+    if (reader.classList.contains('is-compact') && reader.classList.contains('sidebar-open')) {
+      setReaderSidebar(reader, false);
+    }
+  });
+  readerResizeObserver.observe(reader);
+  updateReaderOutline(reader);
 }
 function setMaximized(win: HTMLElement, maximized: boolean) {
   win.classList.toggle('is-maximized', maximized);
@@ -476,6 +539,12 @@ root.addEventListener('click', (event) => {
     syncSidebar();
     return;
   }
+  const toggleOutline = target.closest<HTMLButtonElement>('[data-reader-toc-toggle]');
+  if (toggleOutline) {
+    const reader = toggleOutline.closest<HTMLElement>('[data-window="reader"]')!;
+    setReaderSidebar(reader, toggleOutline.getAttribute('aria-expanded') !== 'true');
+    return;
+  }
   const control = target.closest<HTMLElement>('[data-minimize], [data-maximize], [data-center], [data-resize-window]');
   if (control) {
     const win = control.closest<HTMLElement>('[data-window]')!;
@@ -523,6 +592,10 @@ root.addEventListener('click', (event) => {
     event.preventDefault();
     pushUrl(windowRoute(inReader) + href);
     scrollToArticleAnchor(inReader, href);
+    if (anchor.hasAttribute('data-reader-toc-link') && inReader.classList.contains('is-compact')) {
+      inReader.querySelector<HTMLButtonElement>('[data-reader-toc-toggle]')!.focus({ preventScroll: true });
+      setReaderSidebar(inReader, false);
+    }
     return;
   }
   if (anchor.hasAttribute('data-open-article') || (anchor.origin === location.origin && postPaths.has(articlePath(anchor.pathname)))) {
@@ -568,6 +641,13 @@ searchForm.addEventListener('submit', (event) => {
 document.addEventListener('keydown', (event) => {
   const target = event.target as HTMLElement;
   if (event.key === 'Escape' && dismissDisclosure(true)) return;
+  if (event.key === 'Escape' && activeWindow?.dataset.window === 'reader' &&
+      activeWindow.classList.contains('is-compact') && activeWindow.classList.contains('sidebar-open')) {
+    setReaderSidebar(activeWindow, false);
+    activeWindow.querySelector<HTMLButtonElement>('[data-reader-toc-toggle]')!.focus({ preventScroll: true });
+    event.preventDefault();
+    return;
+  }
   if (event.key === 'Escape' && target === searchInput) {
     event.preventDefault();
     hideSearch();
@@ -646,6 +726,10 @@ mobileLayout.addEventListener('change', () => {
   dismissDisclosure();
   if (mobileLayout.matches) switchWorkspace(1);
   syncSidebar();
+  for (const reader of readers.values()) {
+    updateReaderSidebarMode(reader);
+    setReaderSidebar(reader, !mobileLayout.matches);
+  }
   if (mobileLayout.matches && (!activeWindow || !isVisible(activeWindow))) {
     const next = [...dockItems.keys()].filter(isVisible).sort((a, b) => Number(b.style.zIndex) - Number(a.style.zIndex))[0] ?? library;
     focusWindow(next);
@@ -779,6 +863,7 @@ if (initialReader) {
   initialReader.dataset.articleUrl = postPaths.has(articlePath(location.pathname)) ? articlePath(location.pathname) : location.pathname;
   readers.set(initialReader.dataset.articleUrl, initialReader);
   prepareWindow(initialReader);
+  prepareReader(initialReader);
   dockItemFor(initialReader, dock.querySelector<HTMLAnchorElement>('[data-dock-window="reader"]')!);
   focusWindow(initialReader);
 } else if (initialKind === 'about') {
