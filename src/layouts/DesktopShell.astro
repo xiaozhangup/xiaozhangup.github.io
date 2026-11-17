@@ -228,7 +228,17 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
             <h2>xiaozhangup</h2>
             <p data-i18n="welcome">欢迎来到我的个人博客。</p>
             <div class="about-links">
-              <a href="https://github.com/xiaozhangup" target="_blank" rel="noopener noreferrer"><Icon name="simple-icons:github" aria-hidden="true" /><span>GitHub</span><AdwIcon name="external-link" /></a>
+              <a class="about-github-desktop" href="https://github.com/xiaozhangup" target="_blank" rel="noopener noreferrer"><Icon name="simple-icons:github" aria-hidden="true" /><span>GitHub</span><AdwIcon name="external-link" /></a>
+              {shortcuts.map((item) => {
+                const label = labelPair(item.label);
+                return (
+                  <a class="about-personal-link" href={item.href} target={item.newTab === false ? undefined : '_blank'} rel={item.newTab === false ? undefined : 'noopener noreferrer'}>
+                    <img src={item.icon} width="24" height="24" alt="" />
+                    <span data-label-zh={label.zh} data-label-en={label.en}>{label.zh}</span>
+                    <AdwIcon name="external-link" />
+                  </a>
+                );
+              })}
               <a href="/rss.xml"><AdwIcon name="application-rss+xml" /><span data-i18n="rss">RSS 订阅</span><AdwIcon name="go-next" /></a>
             </div>
           </div>

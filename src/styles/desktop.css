@@ -501,6 +501,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
 .about-content p { margin: 0 0 20px; color: var(--dim); }
 .about-links { display: grid; border-radius: 12px; background: var(--card-bg-color); box-shadow: 0 1px 2px var(--card-shade-color); }
 .about-links a { display: flex; align-items: center; gap: 12px; min-height: 51px; padding: 8px 14px; text-align: start; }
+.about-links > .about-personal-link { display: none; }
 .about-links a + a { border-top: 1px solid var(--card-shade-color); }
 .about-links a:first-child { border-radius: 12px 12px 0 0; }
 .about-links a:last-child { border-radius: 0 0 12px 12px; }

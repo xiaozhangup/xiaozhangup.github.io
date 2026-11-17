@@ -5,6 +5,7 @@
 # success 和 failure 是 copy 可选的反馈文案。mobile: false 可仅在桌面展示该菜单。
 menus:
   - id: github
+    mobile: false
     label: GitHub
     items:
       - type: link
