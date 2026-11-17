@@ -245,7 +245,7 @@ const date = (d: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', mo
             const label = labelPair(item.label);
             return (
               <a href={item.href} class="desktop-shortcut" data-shortcut-home="top-right" data-open-friend aria-controls={`friend-window-${index}`} aria-describedby="desktop-shortcut-help-two">
-                <img src={item.icon} alt="" /><span data-label-zh={label.zh} data-label-en={label.en}>{label.zh}</span>
+                <img src={item.icon} alt="" /><span data-label-zh={`友链 ${label.zh}`} data-label-en={`Friend link ${label.en}`}>友链 {label.zh}</span>
               </a>
             );
           })}
