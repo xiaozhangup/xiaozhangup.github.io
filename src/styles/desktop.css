@@ -259,7 +259,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visibl
   min-width: 0;
   padding-inline: 6px;
   font-weight: 700;
+  pointer-events: none;
 }
+.window-header-leading .sidebar-toggle { pointer-events: auto; }
 .window--library .window-header-leading, .window--reader .window-header-leading {
   flex: 0 0 var(--sidebar-size);
   background: var(--sidebar-bg-color);
